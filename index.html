@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Báo thôi việc – Phổ Đình</title>
+<meta name="theme-color" content="#F6F9F8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Thôi việc">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<style>
+  html,body{margin:0;height:100%;background:#F6F9F8;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#1C2A39}
+  #app{position:fixed;inset:0;width:100%;height:100%;border:0;padding-top:env(safe-area-inset-top);box-sizing:border-box;background:#F6F9F8}
+  .card{position:fixed;left:12px;right:12px;bottom:calc(96px + env(safe-area-inset-bottom));z-index:9;background:#1F3A5C;color:#fff;border-radius:18px;
+        padding:14px 14px 14px 16px;box-shadow:0 12px 30px rgba(22,41,63,.35);display:flex;gap:12px;align-items:center;max-width:520px;margin:0 auto}
+  .card b{display:block;font-size:15px;margin-bottom:2px}
+  .card span{font-size:13px;color:#CFE6E1;line-height:1.4}
+  .card .grow{flex:1}
+  .card button{border:0;border-radius:12px;font:inherit;font-weight:700;font-size:14px;padding:10px 14px}
+  .card .go{background:#F2A25A;color:#fff}
+  .card .x{background:transparent;color:#9FB3C8;padding:6px 4px;font-size:18px}
+  .hide{display:none}
+  #boot{position:fixed;inset:0;display:grid;place-items:center;color:#4E5F6E;font-size:14px}
+</style>
+</head>
+<body>
+<div id="boot">Đang mở Báo thôi việc…</div>
+<iframe id="app" title="Báo thôi việc"></iframe>
+
+<div id="cInstall" class="card hide">
+  <div class="grow"><b>Cài app lên màn hình chính</b><span>Bấm nút <b style="display:inline">Chia sẻ</b> (ô vuông có mũi tên ↑) → <b style="display:inline">Thêm vào MH chính</b>. Sau đó mở app từ biểu tượng mới để nhận thông báo.</span></div>
+  <button class="x" data-close="cInstall" aria-label="Đóng">✕</button>
+</div>
+<div id="cPush" class="card hide">
+  <div class="grow"><b>Bật thông báo</b><span>Nhận ngay việc mới và số đỏ trên biểu tượng app.</span></div>
+  <button class="go" id="btnPush">Bật</button>
+  <button class="x" data-close="cPush" aria-label="Để sau">✕</button>
+</div>
+
+<script src="config.js"></script>
+<script>
+// Firebase tải riêng: nếu mạng chặn Firebase thì app vẫn mở bình thường, chỉ thiếu thông báo đẩy.
+const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
+let getToken = null;
+
+const C = window.TV_CONFIG, $ = id => document.getElementById(id);
+const ls = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const device = (isIOS ? 'iPhone/iPad' : /android/i.test(navigator.userAgent) ? 'Android' : 'Máy tính') + (standalone ? ' – app' : ' – trình duyệt');
+let appWin = null, token = null, swReg = null, messaging = null;
+
+// 1. Mở web app trong khung
+$('app').src = C.execUrl;
+$('app').addEventListener('load', () => $('boot').classList.add('hide'));
+
+// 2. Nhận tin từ web app (chỉ chấp nhận khung Apps Script)
+window.addEventListener('message', e => {
+  let host = ''; try { host = new URL(e.origin).hostname; } catch (_) {}
+  if (!/\.googleusercontent\.com$/.test(host) || !e.data || typeof e.data !== 'object') return;
+  if (e.data.type === 'tv-hello') { appWin = e.source; sendToken(false); showCards(); }
+  if (e.data.type === 'tv-badge' && 'setAppBadge' in navigator) {
+    (e.data.n ? navigator.setAppBadge(e.data.n) : navigator.clearAppBadge()).catch(() => {});
+  }
+});
+function sendToken(fresh) {
+  if (appWin && token) appWin.postMessage({ type: 'tv-token', token, device, fresh }, '*');
+}
+
+// 3. Service worker + Firebase
+async function initPush() {
+  if (!('serviceWorker' in navigator) || !('Notification' in window)) return false;
+  swReg = await navigator.serviceWorker.register('sw.js', { scope: './' });
+  await navigator.serviceWorker.ready;
+  const [{ initializeApp }, fm] = await Promise.all([import(FB + 'firebase-app.js'), import(FB + 'firebase-messaging.js')]);
+  if (!(await fm.isSupported().catch(() => false))) return false;
+  getToken = fm.getToken;
+  messaging = fm.getMessaging(initializeApp(C.firebase));
+  if (Notification.permission === 'granted') await fetchToken(false);
+  return true;
+}
+async function fetchToken(fresh) {
+  try {
+    token = await getToken(messaging, { vapidKey: C.vapidKey, serviceWorkerRegistration: swReg });
+    if (token) sendToken(fresh);
+  } catch (e) { console.warn('FCM token', e); }
+}
+let pushReady = false;
+initPush().then(ok => { pushReady = ok; }).catch(e => console.warn('push off', e)).finally(showCards);
+
+// 4. Gợi ý cài app / bật thông báo
+function showCards() {
+  const later = k => ls.get('tv_hide_' + k) && Date.now() - +ls.get('tv_hide_' + k) < 3 * 86400000;
+  $('cInstall').classList.toggle('hide', !(isIOS && !standalone) || later('cInstall'));
+  const canAsk = pushReady && 'Notification' in window && Notification.permission === 'default' && (!isIOS || standalone);
+  $('cPush').classList.toggle('hide', !canAsk || !appWin || later('cPush'));
+}
+document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => { ls.set('tv_hide_' + b.dataset.close, String(Date.now())); $(b.dataset.close).classList.add('hide'); });
+$('btnPush').onclick = async () => {
+  const p = await Notification.requestPermission();   // phải bấm tay – yêu cầu của iPhone
+  $('cPush').classList.add('hide');
+  if (p === 'granted') await fetchToken(true);
+};
+</script>
+</body>
+</html>
