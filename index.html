@@ -36,23 +36,26 @@
   <button class="x" data-close="cInstall" aria-label="Đóng">✕</button>
 </div>
 <div id="cPush" class="card hide">
-  <div class="grow"><b>Bật thông báo</b><span>Nhận ngay việc mới và số đỏ trên biểu tượng app.</span></div>
+  <div class="grow"><b>Bật thông báo</b><span id="pushMsg">Nhận ngay việc mới và số đỏ trên biểu tượng app.</span></div>
   <button class="go" id="btnPush">Bật</button>
   <button class="x" data-close="cPush" aria-label="Để sau">✕</button>
+</div>
+<div id="cInfo" class="card hide">
+  <div class="grow"><b id="infoT"></b><span id="infoM"></span></div>
+  <button class="x" data-close="cInfo" aria-label="Đóng">✕</button>
 </div>
 
 <script src="config.js"></script>
 <script>
 // Firebase tải riêng: nếu mạng chặn Firebase thì app vẫn mở bình thường, chỉ thiếu thông báo đẩy.
 const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
-let getToken = null;
-
 const C = window.TV_CONFIG, $ = id => document.getElementById(id);
 const ls = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
 const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const hasNoti = 'Notification' in window && 'serviceWorker' in navigator;
 const device = (isIOS ? 'iPhone/iPad' : /android/i.test(navigator.userAgent) ? 'Android' : 'Máy tính') + (standalone ? ' – app' : ' – trình duyệt');
-let appWin = null, token = null, swReg = null, messaging = null;
+let appWin = null, token = null, swReg = null, messaging = null, fm = null;
 
 // 1. Mở web app trong khung
 $('app').src = C.execUrl;
@@ -62,49 +65,59 @@ $('app').addEventListener('load', () => $('boot').classList.add('hide'));
 window.addEventListener('message', e => {
   let host = ''; try { host = new URL(e.origin).hostname; } catch (_) {}
   if (!/\.googleusercontent\.com$/.test(host) || !e.data || typeof e.data !== 'object') return;
-  if (e.data.type === 'tv-hello') { appWin = e.source; sendToken(false); showCards(); }
+  if (e.data.type === 'tv-hello') { appWin = e.source; sendToken(false); }
   if (e.data.type === 'tv-badge' && 'setAppBadge' in navigator) {
     (e.data.n ? navigator.setAppBadge(e.data.n) : navigator.clearAppBadge()).catch(() => {});
   }
 });
+let pendingFresh = false;
 function sendToken(fresh) {
-  if (appWin && token) appWin.postMessage({ type: 'tv-token', token, device, fresh }, '*');
+  if (!token) return;
+  if (appWin) { appWin.postMessage({ type: 'tv-token', token, device, fresh: fresh || pendingFresh }, '*'); pendingFresh = false; }
+  else if (fresh) pendingFresh = true;   // gửi khi web app đăng nhập xong
 }
 
-// 3. Service worker + Firebase
+// 3. Service worker + Firebase (chỉ tải khi cần)
 async function initPush() {
-  if (!('serviceWorker' in navigator) || !('Notification' in window)) return false;
+  if (messaging) return true;
   swReg = await navigator.serviceWorker.register('sw.js', { scope: './' });
   await navigator.serviceWorker.ready;
-  const [{ initializeApp }, fm] = await Promise.all([import(FB + 'firebase-app.js'), import(FB + 'firebase-messaging.js')]);
-  if (!(await fm.isSupported().catch(() => false))) return false;
-  getToken = fm.getToken;
-  messaging = fm.getMessaging(initializeApp(C.firebase));
-  if (Notification.permission === 'granted') await fetchToken(false);
+  const [app, m] = await Promise.all([import(FB + 'firebase-app.js'), import(FB + 'firebase-messaging.js')]);
+  if (!(await m.isSupported().catch(() => false))) throw new Error('Trình duyệt này chưa hỗ trợ thông báo đẩy.');
+  fm = m; messaging = m.getMessaging(app.initializeApp(C.firebase));
   return true;
 }
 async function fetchToken(fresh) {
-  try {
-    token = await getToken(messaging, { vapidKey: C.vapidKey, serviceWorkerRegistration: swReg });
-    if (token) sendToken(fresh);
-  } catch (e) { console.warn('FCM token', e); }
+  await initPush();
+  token = await fm.getToken(messaging, { vapidKey: C.vapidKey, serviceWorkerRegistration: swReg });
+  if (!token) throw new Error('Không lấy được mã thiết bị.');
+  ls.set('tv_push_ok', '1');
+  sendToken(fresh);
 }
-let pushReady = false;
-initPush().then(ok => { pushReady = ok; }).catch(e => console.warn('push off', e)).finally(showCards);
 
-// 4. Gợi ý cài app / bật thông báo
+// 4. Khung gợi ý: cài app / bật thông báo / hướng dẫn khi bị tắt
+const later = k => ls.get('tv_hide_' + k) && Date.now() - +ls.get('tv_hide_' + k) < 86400000;
+function info(t, m) { if (later('cInfo')) return; $('infoT').textContent = t; $('infoM').textContent = m; $('cInfo').classList.remove('hide'); }
 function showCards() {
-  const later = k => ls.get('tv_hide_' + k) && Date.now() - +ls.get('tv_hide_' + k) < 3 * 86400000;
-  $('cInstall').classList.toggle('hide', !(isIOS && !standalone) || later('cInstall'));
-  const canAsk = pushReady && 'Notification' in window && Notification.permission === 'default' && (!isIOS || standalone);
-  $('cPush').classList.toggle('hide', !canAsk || !appWin || later('cPush'));
+  if (isIOS && !standalone) { if (!later('cInstall')) $('cInstall').classList.remove('hide'); return; }
+  if (!hasNoti) { if (isIOS) info('Chưa nhận được thông báo', 'Cần iPhone chạy iOS 16.4 trở lên (Cài đặt → Cài đặt chung → Cập nhật phần mềm).'); return; }
+  if (Notification.permission === 'default' && !later('cPush')) $('cPush').classList.remove('hide');
+  if (Notification.permission === 'denied') info('Thông báo đang bị tắt', isIOS
+    ? 'Vào Cài đặt iPhone → Thông báo → Thôi việc → bật Cho phép thông báo, Âm thanh, Biểu tượng.'
+    : 'Bấm biểu tượng ổ khóa / ⋮ → Cài đặt trang web → Thông báo → Cho phép.');
+  if (Notification.permission === 'granted') fetchToken(false).catch(e => console.warn('push', e));
 }
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => { ls.set('tv_hide_' + b.dataset.close, String(Date.now())); $(b.dataset.close).classList.add('hide'); });
 $('btnPush').onclick = async () => {
-  const p = await Notification.requestPermission();   // phải bấm tay – yêu cầu của iPhone
-  $('cPush').classList.add('hide');
-  if (p === 'granted') await fetchToken(true);
+  // Hỏi quyền NGAY khi bấm (iPhone chỉ cho phép hỏi trong lúc người dùng bấm)
+  let p = 'default';
+  try { p = await Notification.requestPermission(); } catch (e) { p = Notification.permission; }
+  if (p !== 'granted') { $('cPush').classList.add('hide'); if (p === 'denied') showCards(); return; }
+  $('pushMsg').textContent = 'Đang bật…'; $('btnPush').disabled = true;
+  try { await fetchToken(true); $('cPush').classList.add('hide'); }
+  catch (e) { $('pushMsg').textContent = 'Chưa bật được: ' + (e && e.message || e) + ' – thử đóng hẳn app rồi mở lại.'; $('btnPush').disabled = false; }
 };
+setTimeout(showCards, 1200);
 </script>
 </body>
 </html>
