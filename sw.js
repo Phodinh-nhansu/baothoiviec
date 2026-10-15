@@ -1,7 +1,7 @@
 // Service worker: (1) lưu sẵn giao diện app trên máy → mở app hiện ngay, không chờ tải trang;
 // (2) nhận thông báo đẩy + số đỏ trên biểu tượng app.
 // Mỗi lần cập nhật app trên GitHub: tăng số phiên bản V (tv-3, tv-4…). Máy sẽ dùng bản mới từ lần mở kế tiếp.
-const V = 'tv-2';
+const V = 'tv-3';
 const SHELL = ['./', 'index.html', 'config.js', 'pwa.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/badge-72.png'];
 
 self.addEventListener('install', e => {
