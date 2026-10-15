@@ -28,6 +28,7 @@
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 'Be Vietnam Pro',Arial,sans-serif}
   body{padding-top:env(safe-area-inset-top,0px)}
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* iPhone: không tự phóng to chữ khi mở dạng app */
   button,input,select,textarea{font:inherit;color:inherit}
   button{cursor:pointer}
   :focus-visible{outline:3px solid var(--orange);outline-offset:2px}
@@ -91,6 +92,7 @@
   .tl .ev .grow{flex:1;min-width:0}
   .tl .ev .n{font-weight:700;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .tl .ev .s{font-size:12.5px;color:var(--muted)}
+  .tl .ev .bd{flex-shrink:1;max-width:46%;white-space:normal;text-align:center;line-height:1.3}
   .today-line{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin:2px 0 10px;color:var(--orange-d);font-size:12px;font-weight:700}
   .today-line:after{content:'';flex:1;height:2px;background:var(--orange);border-radius:2px}
 
@@ -136,7 +138,8 @@
   /* iPhone: bỏ kiểu ô mặc định của máy để ô chọn / ô ngày có khung và chiều cao như nhau */
   input[type=date],select{-webkit-appearance:none;appearance:none;min-height:48px;line-height:1.4;text-align:left}
   input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0}
-  input[type=date]::-webkit-calendar-picker-indicator{opacity:.55}
+  input[type=date]{padding-right:44px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%236A7A88' stroke-width='2' stroke-linecap='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='3'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+  input[type=date]::-webkit-calendar-picker-indicator{opacity:0;width:30px;height:30px;cursor:pointer}
   select{padding-right:38px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%236A7A88' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
   input:focus,select:focus,textarea:focus{box-shadow:inset 0 0 0 2px var(--navy-2)}
   textarea{min-height:84px;resize:vertical}
@@ -200,7 +203,9 @@
   .item:hover{box-shadow:inset 0 0 0 2px var(--mint-d)}
   .item .grow{flex:1;min-width:0}
   .item .s{font-size:12.5px;color:var(--muted)}
-  .send-bar{position:sticky;bottom:calc(var(--nav-h) + 24px + var(--sb));margin-top:18px}
+  .send-bar{position:sticky;bottom:calc(var(--nav-h) + 22px + var(--sb));margin-top:18px;z-index:26}
+  /* Trang báo nghỉ: phủ nền dưới nút Gửi để nội dung không lộ ra giữa nút và thanh menu */
+  body.on-new::after{content:'';position:fixed;left:0;right:0;bottom:0;height:calc(var(--nav-h) + 96px + var(--sb));background:linear-gradient(to bottom,rgba(246,249,248,0),var(--paper) 30px);z-index:24;pointer-events:none}
 
   /* ---------- Việc cần làm ---------- */
   .todo{display:flex;flex-direction:column;gap:10px}
@@ -463,7 +468,7 @@ const $=id=>document.getElementById(id);
 const LC={get(){try{return JSON.parse(localStorage.getItem('tv_last')||'null')}catch(e){return null}},set(v){try{v?localStorage.setItem('tv_last',JSON.stringify(v)):localStorage.removeItem('tv_last')}catch(e){}}};
 const store={get(){try{return localStorage.getItem('tv_token')}catch(e){return null}},set(v){try{v?localStorage.setItem('tv_token',v):localStorage.removeItem('tv_token')}catch(e){}}};
 // Gọi máy chủ: mở bằng link Google (máy tính) → google.script.run; app cài trên điện thoại → gọi thẳng API (doPost)
-const APP_VER='15.10.2026-d';   // tăng mỗi lần cập nhật – xem ở Tài khoản để biết máy đã nhận bản mới chưa
+const APP_VER='15.10.2026-e';   // tăng mỗi lần cập nhật – xem ở Tài khoản để biết máy đã nhận bản mới chưa
 const API_URL=(window.TV_CONFIG&&TV_CONFIG.execUrl)||'';
 function callFail(m,rej){m=String(m||'Lỗi kết nối').replace(/^Error:\s*/,'');if(m.indexOf('SESSION')>=0)toLogin('Phiên đăng nhập đã hết hạn. Nhập lại mã cá nhân để tiếp tục.');rej(new Error(m))}
 function call(fn,...args){return new Promise((res,rej)=>{
@@ -524,7 +529,7 @@ function apply(D,stale){
 
 /* ---------- điều hướng ---------- */
 function go(p){
-  PAGE=p;['home','cal','list','new'].forEach(k=>$('p'+k[0].toUpperCase()+k.slice(1)).classList.toggle('hide',k!==p));
+  PAGE=p;document.body.classList.toggle('on-new',p==='new');['home','cal','list','new'].forEach(k=>$('p'+k[0].toUpperCase()+k.slice(1)).classList.toggle('hide',k!==p));
   [['home','nHome'],['cal','nCal'],['list','nList']].forEach(([k,id])=>$(id).classList.toggle('on',k===p));
   window.scrollTo(0,0);
   if(p==='new')return;
