@@ -1,7 +1,7 @@
 // Service worker: (1) lưu sẵn giao diện app trên máy → mở app nhanh, mất mạng vẫn mở được;
 // (2) nhận thông báo đẩy + số đỏ trên biểu tượng app.
 // Trang chính (index.html) luôn lấy bản mới nhất từ GitHub nếu có mạng (chờ tối đa 3 giây), không thì dùng bản đã lưu.
-const V = 'tv-4';
+const V = 'tv-5';
 const SHELL = ['./', 'index.html', 'config.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/badge-72.png'];
 const fresh = req => fetch(req, { cache: 'no-store' });   // bỏ qua bộ nhớ tạm 10 phút của GitHub
 
@@ -14,6 +14,7 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;   // dữ liệu Google luôn lấy mới
+  if (req.headers.has('range') || /\.(mp4|jpg|png)$/i.test(new URL(req.url).pathname) && !SHELL.some(u => req.url.endsWith(u))) return;   // clip, ảnh: để trình duyệt tự tải – không lưu vào máy
   const isPage = req.mode === 'navigate' || /\/(index\.html)?$/.test(new URL(req.url).pathname);
   e.respondWith(caches.open(V).then(async c => {
     const hit = await c.match(req, { ignoreSearch: true });

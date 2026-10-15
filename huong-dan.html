@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1F3A5C">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<title>Cài app Báo thôi việc</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: một cột hẹp như trang trên điện thoại – thẻ app ở đầu, chọn máy, các bước có hình minh họa, phần hỏi nhanh */
+:root{
+  --bg:#F6F9F8; --paper:#FFFFFF; --ink:#1C2A39; --muted:#5B6B79; --line:#E1EAE7;
+  --navy:#1F3A5C; --navy-ink:#16293F; --orange:#F2A25A; --orange-d:#C9722A; --orange-soft:#FCE9D6;
+  --mint:#CFE6E1; --mint-soft:#EEF5F3; --green:#2F8A62; --green-soft:#DDF1E7; --red:#D2553F;
+  --screen:#F6F9F8; --frame:#16293F;
+  --f-display:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1A26; --paper:#162433; --ink:#E6EDF2; --muted:#9AAAB8; --line:#25384B;
+  --navy:#2B4C74; --navy-ink:#E6EDF2; --orange:#F2A25A; --orange-d:#F5B57A; --orange-soft:#3A2C1E;
+  --mint:#24443F; --mint-soft:#1B2F2C; --green:#5BC08F; --green-soft:#1D3A2E; --red:#E9806C;
+  --screen:#1C2B3B; --frame:#0A131C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1A26; --paper:#162433; --ink:#E6EDF2; --muted:#9AAAB8; --line:#25384B;
+  --navy:#2B4C74; --navy-ink:#E6EDF2; --orange:#F2A25A; --orange-d:#F5B57A; --orange-soft:#3A2C1E;
+  --mint:#24443F; --mint-soft:#1B2F2C; --green:#5BC08F; --green-soft:#1D3A2E; --red:#E9806C;
+  --screen:#1C2B3B; --frame:#0A131C; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;color:var(--navy-ink)}
+p{margin:0}
+/* thẻ app */
+.app{background:#1F3A5C;color:#fff;border-radius:24px;padding:22px 20px;display:flex;flex-direction:column;gap:16px}
+.app .row{display:flex;gap:14px;align-items:center}
+.app .ic{width:58px;height:58px;flex:none;border-radius:16px;background:#F2A25A;display:grid;place-items:center}
+.app h1{color:#fff;font-size:24px;font-weight:800;line-height:1.2}
+.app .sub{color:#C7D4E3;font-size:14px}
+.link{display:flex;gap:8px;align-items:center;background:rgba(255,255,255,.1);border-radius:12px;padding:8px 8px 8px 12px}
+.link code{flex:1;min-width:0;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;color:#fff;overflow-wrap:anywhere}
+.btn{border:0;border-radius:12px;font:inherit;font-weight:700;font-size:14px;padding:10px 14px;cursor:pointer}
+.btn:focus-visible,.tab:focus-visible,summary:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.btn.copy{background:#fff;color:#1F3A5C;white-space:nowrap}
+.btn.go{background:#F2A25A;color:#fff;text-decoration:none;text-align:center;display:block;font-size:16px;padding:13px}
+.note{font-size:13px;color:#C7D4E3}
+.note b{color:#fff}
+/* chọn máy */
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--mint-soft);border-radius:14px;padding:5px}
+.tab{border:0;border-radius:10px;background:transparent;font:inherit;font-weight:700;font-size:15px;color:var(--muted);padding:10px;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--paper);color:var(--navy-ink);box-shadow:0 1px 0 var(--line)}
+.sect-t{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+/* bước */
+ol.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px;counter-reset:s}
+.step{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:16px;display:grid;grid-template-columns:1fr 150px;gap:16px;align-items:center;counter-increment:s}
+.step .txt{min-width:0;display:flex;flex-direction:column;gap:6px}
+.step h3{font-size:17px;font-weight:700;display:flex;gap:10px;align-items:baseline}
+.step h3::before{content:counter(s);flex:none;width:26px;height:26px;border-radius:50%;background:var(--orange);color:#fff;font-size:13px;font-weight:800;display:inline-grid;place-items:center;transform:translateY(-2px)}
+.step p{color:var(--muted);font-size:14px}
+.step p b{color:var(--ink)}
+.tip{font-size:13px;background:var(--orange-soft);color:var(--ink);border-radius:10px;padding:8px 10px}
+@media (max-width:480px){.step{grid-template-columns:1fr}.step .pic{justify-self:center}}
+/* minh họa điện thoại */
+.pic{width:150px;max-width:100%;aspect-ratio:150/200;background:var(--frame);border-radius:22px;padding:6px}
+.scr{width:100%;height:100%;background:var(--screen);border-radius:17px;overflow:hidden;position:relative;display:flex;flex-direction:column;font-size:9px;color:var(--ink)}
+.bar{margin-top:auto;display:flex;gap:4px;align-items:center;padding:6px}
+.url{flex:1;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:4px 5px;font-size:7.5px;color:var(--muted);white-space:nowrap;overflow:hidden}
+.dot3{width:18px;height:18px;border-radius:50%;background:var(--paper);border:1px solid var(--line);display:grid;place-items:center;font-size:9px;font-weight:800;color:var(--ink)}
+.hl{box-shadow:0 0 0 2px var(--orange),0 0 0 5px rgba(242,162,90,.35)}
+.lines{padding:10px 8px;display:flex;flex-direction:column;gap:5px}
+.lines i{display:block;height:6px;border-radius:3px;background:var(--line)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--paper);border-radius:12px 12px 0 0;padding:8px 7px;display:flex;flex-direction:column;gap:4px;box-shadow:0 -4px 12px rgba(0,0,0,.12)}
+.opt{display:flex;justify-content:space-between;align-items:center;padding:5px 6px;border-radius:7px;background:var(--mint-soft);font-size:8px}
+.sw{width:18px;height:10px;border-radius:5px;background:var(--green);position:relative}
+.sw::after{content:'';position:absolute;right:1px;top:1px;width:8px;height:8px;border-radius:50%;background:#fff}
+.home{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;padding:16px 12px}
+.home span{aspect-ratio:1;border-radius:9px;background:var(--line)}
+.home .me{background:#F2A25A;display:grid;place-items:center}
+.card{position:absolute;left:6px;right:6px;bottom:8px;background:#1F3A5C;color:#fff;border-radius:10px;padding:7px;display:flex;gap:6px;align-items:center;font-size:8px}
+.card b{display:block;font-size:8.5px}
+.card .bt{background:#F2A25A;border-radius:6px;padding:4px 6px;font-weight:700}
+.pin{display:flex;gap:6px;justify-content:center;margin:auto 0 8px}
+.pin i{width:16px;height:20px;border-radius:5px;background:var(--paper);border:1px solid var(--line);display:grid;place-items:center;font-style:normal;font-weight:800}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:6px}
+.keys span{background:var(--paper);border-radius:5px;text-align:center;padding:3px 0;font-weight:600}
+.menu{position:absolute;right:6px;top:22px;width:96px;background:var(--paper);border-radius:8px;padding:4px;display:flex;flex-direction:column;gap:2px;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.menu span{padding:4px 5px;border-radius:5px;font-size:7.5px}
+.topbar{display:flex;gap:4px;align-items:center;padding:6px}
+/* kiểm tra & hỏi nhanh */
+.ok{background:var(--green-soft);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.ok h2{font-size:17px;color:var(--green)}
+.ok ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.faq{display:flex;flex-direction:column;gap:8px}
+details{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+summary{cursor:pointer;font-weight:700;color:var(--navy-ink);list-style:none;display:flex;justify-content:space-between;gap:10px}
+summary::after{content:'+';color:var(--orange-d);font-weight:800}
+details[open] summary::after{content:'–'}
+details p{margin-top:8px;color:var(--muted);font-size:14px}
+details p b{color:var(--ink)}
+.foot{text-align:center;color:var(--muted);font-size:13px}
+@media (prefers-reduced-motion:no-preference){.tab{transition:background .15s,color .15s}}
+</style>
+
+<style>html{-webkit-text-size-adjust:100%}body{margin:0}.clip{display:flex;flex-direction:column;gap:10px}.clip video{width:100%;max-width:360px;align-self:center;aspect-ratio:9/16;border-radius:18px;background:#16293F}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="app" aria-label="App Báo thôi việc">
+    <div class="row">
+      <div class="ic" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M6 8h12M6 12h12M6 16h7"/></svg></div>
+      <div><h1>Cài app Báo thôi việc</h1><p class="sub">Phổ Đình · Phòng Nhân sự · khoảng 2 phút</p></div>
+    </div>
+    <div class="link"><code id="appUrl">https://phodinh-nhansu.github.io/baothoiviec/</code><button class="btn copy" id="btnCopy" type="button">Sao chép</button></div>
+    <a class="btn go" href="https://phodinh-nhansu.github.io/baothoiviec/" target="_blank" rel="noopener">Mở link cài app</a>
+    <p class="note">Cần có: <b>mã đăng nhập 4 số</b> (BP. Tuyển dụng gửi qua email). Cài một lần, sau đó điện thoại tự báo khi có việc mới.</p>
+  </section>
+
+  <section class="clip" aria-labelledby="clipT">
+    <h2 id="clipT" class="sect-t">Xem clip hướng dẫn (2 phút, không cần bật tiếng)</h2>
+    <video src="huong-dan.mp4" poster="huong-dan-anh.jpg" controls playsinline preload="none"></video>
+  </section>
+  <div class="tabs" role="tablist" aria-label="Chọn loại điện thoại">
+    <button class="tab" role="tab" id="tab-ios" aria-controls="ios" aria-selected="true" type="button">iPhone</button>
+    <button class="tab" role="tab" id="tab-and" aria-controls="and" aria-selected="false" type="button">Android</button>
+  </div>
+
+  <section id="ios" role="tabpanel" aria-labelledby="tab-ios">
+    <ol class="steps">
+      <li class="step"><div class="txt"><h3>Mở link bằng Safari</h3>
+        <p>Bấm link ở trên. Nếu đang mở trong <b>Zalo</b>: bấm <b>⋯</b> góc trên → <b>Mở bằng trình duyệt</b>.</p>
+        <p class="tip">Phải là <b>Safari</b>. Chrome và Zalo trên iPhone không cài được app.</p></div>
+        <div class="pic" aria-hidden="true"><div class="scr"><div class="lines"><i style="width:70%"></i><i></i><i style="width:85%"></i><i style="width:60%"></i></div>
+          <div class="bar"><span class="url">phodinh-nhansu.github.io</span><span class="dot3">↻</span></div></div></div></li>
+      <li class="step"><div class="txt"><h3>Bấm Chia sẻ</h3>
+        <p>Bấm nút <b>⋯</b> cạnh thanh địa chỉ, rồi chọn <b>Chia sẻ</b> (ô vuông có mũi tên ↑). Máy đời cũ: nút Chia sẻ nằm sẵn ở thanh dưới.</p></div>
+        <div class="pic" aria-hidden="true"><div class="scr"><div class="lines"><i style="width:70%"></i><i></i><i style="width:85%"></i></div>
+          <div class="bar"><span class="url">phodinh-nhansu.github.io</span><span class="dot3 hl">⋯</span></div></div></div></li>
+      <li class="step"><div class="txt"><h3>Thêm vào màn hình chính</h3>
+        <p>Kéo danh sách lên, chọn <b>Thêm vào MH chính</b>. Nếu có công tắc <b>Mở dưới dạng ứng dụng web</b>, bật lên. Bấm <b>Thêm</b>.</p></div>
+        <div class="pic" aria-hidden="true"><div class="scr"><div class="lines"><i style="width:70%"></i><i></i></div>
+          <div class="sheet"><span class="opt">Sao chép</span><span class="opt hl">Thêm vào MH chính <b>＋</b></span><span class="opt">Mở dưới dạng ứng dụng web <span class="sw"></span></span></div></div></div></li>
+      <li class="step"><div class="txt"><h3>Mở app từ biểu tượng</h3>
+        <p>Đóng Safari. Ra màn hình chính, mở biểu tượng <b>Thôi việc</b>.</p>
+        <p class="tip">Cài đúng thì app <b>tràn màn hình, không còn thanh địa chỉ</b> ở dưới.</p></div>
+        <div class="pic" aria-hidden="true"><div class="scr"><div class="home"><span></span><span></span><span></span><span></span><span class="me hl"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M6 8h12M6 12h12M6 16h7"/></svg></span><span></span><span></span><span></span><span></span></div></div></div></li>
+      <li class="step"><div class="txt"><h3>Đăng nhập bằng mã 4 số</h3>
+        <p>Nhập mã trong email của BP. Tuyển dụng, gõ đủ 4 số là app tự vào. <b>Chỉ nhập 1 lần</b> – lần sau mở app là vào thẳng.</p></div>
+        <div class="pic" aria-hidden="true"><div class="scr"><div class="pin"><i>•</i><i>•</i><i>•</i><i></i></div>
+          <div class="keys"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span></span><span>0</span><span></span></div></div></div></li>
+      <li class="step"><div class="txt"><h3>Bật thông báo</h3>
+        <p>Đăng nhập xong, khung <b>Bật thông báo</b> hiện ở phía dưới → bấm <b>Bật</b> → <b>Cho phép</b>.</p></div>
+        <div class="pic" aria-hidden="true"><div class="scr"><div class="lines"><i style="width:60%"></i><i></i><i style="width:80%"></i><i></i></div>
+          <div class="card"><div style="flex:1"><b>Bật thông báo</b>Nhận việc mới</div><span class="bt hl">Bật</span></div></div></div></li>
+    </ol>
+  </section>
+
+  <section id="and" role="tabpanel" aria-labelledby="tab-and" hidden>
+    <ol class="steps">
+      <li class="step"><div class="txt"><h3>Mở link bằng Chrome</h3>
+        <p>Bấm link ở trên. Nếu đang mở trong <b>Zalo</b>: bấm <b>⋯</b> → <b>Mở bằng trình duyệt</b> và chọn <b>Chrome</b>.</p></div>
+        <div class="pic" aria-hidden="true"><div class="scr"><div class="topbar"><span class="url">phodinh-nhansu.github.io</span><span class="dot3">⋮</span></div><div class="lines"><i style="width:70%"></i><i></i><i style="width:85%"></i></div></div></div></li>
+      <li class="step"><div class="txt"><h3>Thêm vào màn hình chính</h3>
+        <p>Bấm <b>⋮</b> góc trên bên phải → <b>Thêm vào màn hình chính</b> (hoặc <b>Cài đặt ứng dụng</b>) → <b>Cài đặt</b>.</p></div>
+        <div class="pic" aria-hidden="true"><div class="scr"><div class="topbar"><span class="url">phodinh-nhansu.github.io</span><span class="dot3 hl">⋮</span></div><div class="lines"><i style="width:70%"></i><i></i></div>
+          <div class="menu"><span>Tab mới</span><span>Dấu trang</span><span class="hl">Thêm vào MH chính</span><span>Chia sẻ…</span></div></div></div></li>
+      <li class="step"><div class="txt"><h3>Mở app từ biểu tượng</h3>
+        <p>Ra màn hình chính, mở biểu tượng <b>Thôi việc</b>.</p></div>
+        <div class="pic" aria-hidden="true"><div class="scr"><div class="home"><span></span><span></span><span></span><span class="me hl"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M6 8h12M6 12h12M6 16h7"/></svg></span><span></span><span></span><span></span><span></span><span></span></div></div></div></li>
+      <li class="step"><div class="txt"><h3>Đăng nhập bằng mã 4 số</h3>
+        <p>Nhập mã trong email của BP. Tuyển dụng. <b>Chỉ nhập 1 lần</b> – lần sau mở app là vào thẳng.</p></div>
+        <div class="pic" aria-hidden="true"><div class="scr"><div class="pin"><i>•</i><i>•</i><i>•</i><i></i></div>
+          <div class="keys"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span></span><span>0</span><span></span></div></div></div></li>
+      <li class="step"><div class="txt"><h3>Bật thông báo</h3>
+        <p>Bấm <b>Bật</b> ở khung phía dưới → <b>Cho phép</b>.</p></div>
+        <div class="pic" aria-hidden="true"><div class="scr"><div class="lines"><i style="width:60%"></i><i></i><i style="width:80%"></i></div>
+          <div class="card"><div style="flex:1"><b>Bật thông báo</b>Nhận việc mới</div><span class="bt hl">Bật</span></div></div></div></li>
+    </ol>
+  </section>
+
+  <section class="ok" aria-labelledby="okT">
+    <h2 id="okT">Đã cài đúng khi</h2>
+    <ul>
+      <li>Trên màn hình chính có biểu tượng <b>Thôi việc</b>.</li>
+      <li>Mở app không còn thanh địa chỉ trình duyệt.</li>
+      <li>Đóng app rồi mở lại: vào thẳng, không hỏi mã.</li>
+      <li>Có việc mới thì điện thoại hiện thông báo và số đỏ trên biểu tượng.</li>
+    </ul>
+  </section>
+
+  <section class="faq" aria-labelledby="faqT">
+    <h2 id="faqT" class="sect-t">Hỏi nhanh</h2>
+    <details><summary>Không thấy khung "Bật thông báo"</summary>
+      <p>App đang mở trong trình duyệt chứ chưa phải app. Xóa biểu tượng cũ, làm lại từ bước 1 bằng <b>Safari</b> (iPhone) hoặc <b>Chrome</b> (Android), rồi mở app <b>từ biểu tượng</b>.</p></details>
+    <details><summary>Lỡ bấm "Không cho phép"</summary>
+      <p>iPhone: <b>Cài đặt → Thông báo → Thôi việc</b> → bật <b>Cho phép thông báo, Âm thanh, Biểu tượng</b>. Android: nhấn giữ biểu tượng app → <b>Thông tin ứng dụng → Thông báo</b> → bật.</p></details>
+    <details><summary>iPhone không có mục "Thêm vào MH chính"</summary>
+      <p>Cần iOS 16.4 trở lên. Xem ở <b>Cài đặt → Cài đặt chung → Giới thiệu → Phiên bản iOS</b>; máy cũ hơn thì cập nhật phần mềm trước.</p></details>
+    <details><summary>Quên mã hoặc đổi điện thoại</summary>
+      <p>Liên hệ <b>BP. Tuyển dụng</b> để gửi lại mã. Đổi máy chỉ cần cài lại theo các bước trên và đăng nhập bằng mã cũ. Mất máy: báo BP. Tuyển dụng đổi mã – máy cũ tự đăng xuất.</p></details>
+    <details><summary>Có phải nhập mã mỗi lần mở app không?</summary>
+      <p>Không. Nhập 1 lần là app nhớ. Chỉ phải nhập lại khi bấm <b>Đăng xuất</b>, khi BP. Tuyển dụng đổi mã cho bạn, hoặc khi cài lại app.</p></details>
+    <details><summary>Đăng xuất thì sao?</summary>
+      <p>Máy đó sẽ ngừng nhận thông báo. Đăng nhập lại là nhận lại bình thường.</p></details>
+  </section>
+
+  <p class="foot">Cần hỗ trợ: BP. Tuyển dụng – Phòng Nhân sự Phổ Đình</p>
+</div>
+
+<script>
+(function(){
+  const tabs=[['tab-ios','ios'],['tab-and','and']];
+  function show(id){tabs.forEach(([t,p])=>{const on=p===id;document.getElementById(t).setAttribute('aria-selected',on);document.getElementById(p).hidden=!on});
+    try{localStorage.setItem('hd_os',id)}catch(e){}}
+  tabs.forEach(([t,p])=>document.getElementById(t).addEventListener('click',()=>show(p)));
+  let pref=null;try{pref=localStorage.getItem('hd_os')}catch(e){}
+  if(!pref&&/android/i.test(navigator.userAgent))pref='and';
+  if(pref)show(pref);
+  const b=document.getElementById('btnCopy'),url=document.getElementById('appUrl');
+  b.addEventListener('click',()=>{
+    const done=()=>{b.textContent='Đã chép';setTimeout(()=>b.textContent='Sao chép',1600)};
+    const sel=()=>{const r=document.createRange();r.selectNodeContents(url);const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent='Đã chọn – bấm giữ để chép'};
+    try{navigator.clipboard.writeText(url.textContent).then(done,sel)}catch(e){sel()}
+  });
+})();
+</script>
+
+</body>
+</html>

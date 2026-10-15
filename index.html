@@ -493,7 +493,8 @@ const $=id=>document.getElementById(id);
 const LC={get(){try{return JSON.parse(localStorage.getItem('tv_last')||'null')}catch(e){return null}},set(v){try{v?localStorage.setItem('tv_last',JSON.stringify(v)):localStorage.removeItem('tv_last')}catch(e){}}};
 const store={get(){try{return localStorage.getItem('tv_token')}catch(e){return null}},set(v){try{v?localStorage.setItem('tv_token',v):localStorage.removeItem('tv_token')}catch(e){}}};
 // Gọi máy chủ: mở bằng link Google (máy tính) → google.script.run; app cài trên điện thoại → gọi thẳng API (doPost)
-const APP_VER='15.10.2026-h';   // tăng mỗi lần cập nhật – xem ở Tài khoản để biết máy đã nhận bản mới chưa
+const APP_VER='15.10.2026-i';   // tăng mỗi lần cập nhật – xem ở Tài khoản để biết máy đã nhận bản mới chưa
+const GUIDE_URL='https://phodinh-nhansu.github.io/baothoiviec/huong-dan.html';
 const API_URL=(window.TV_CONFIG&&TV_CONFIG.execUrl)||'';
 function callFail(m,rej){m=String(m||'Lỗi kết nối').replace(/^Error:\s*/,'');if(m.indexOf('SESSION')>=0)toLogin('Phiên đăng nhập đã hết hạn. Nhập lại mã cá nhân để tiếp tục.');rej(new Error(m))}
 function call(fn,...args){return new Promise((res,rej)=>{
@@ -637,6 +638,7 @@ function openHelp(){
   steps.push(['Chuông 🔔 góc trên','số đỏ là số việc đang chờ bạn – làm xong tự tắt, không cần đọc. Tin cập nhật nằm bên dưới.']);
   $('modalBox').innerHTML=`<div class="grab"></div><div class="help"><h3>Cách sử dụng</h3><div class="muted" style="font-size:13.5px">Dành cho ${esc(r)}</div><ol>${steps.map(([a,b])=>`<li><b>${a}</b>: ${b}</li>`).join('')}</ol>
     <div class="muted" style="font-size:13px;line-height:1.7">Trên phiếu: <span class="bd ut-Cao">Tuyển: Cao</span> <span class="bd ut-TB">Tuyển: Trung bình</span> theo vị trí (tăng 1 bậc khi còn ≤ 7 ngày hoặc chi nhánh báo động đỏ) · <span class="bd don-gap">Thiếu đơn – gấp</span> sắp nghỉ mà chưa có đơn giấy.</div></div>
+    <a href="${GUIDE_URL}" target="_blank" rel="noopener" style="display:flex;gap:10px;align-items:center;margin-top:12px;padding:12px 14px;border-radius:14px;background:var(--mint-soft);color:var(--navy-ink);text-decoration:none;font-weight:600;font-size:14px">▶&nbsp; Xem clip hướng dẫn cài app <span class="muted" style="font-weight:400">– gửi link này cho đồng nghiệp cần cài</span></a>
     <div class="acts"><button class="btn or" onclick="closeModal()">Đã hiểu</button></div>`;
   $('modal').classList.remove('hide');
 }
