@@ -1,8 +1,9 @@
-<!doctype html>
+<!DOCTYPE html>
+<!-- TỰ TẠO từ Index.html của Apps Script – sửa giao diện ở Index.html rồi tạo lại file này -->
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>Báo thôi việc – Phổ Đình</title>
 <meta name="theme-color" content="#F6F9F8">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,112 +13,931 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="icons/icon-192.png">
+<script src="config.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  html,body{margin:0;height:100%;background:#F6F9F8;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#1C2A39}
-  #app{position:fixed;inset:0;width:100%;height:100%;border:0;padding-top:env(safe-area-inset-top);box-sizing:border-box;background:#F6F9F8}
-  .card{position:fixed;left:12px;right:12px;bottom:calc(96px + env(safe-area-inset-bottom));z-index:9;background:#1F3A5C;color:#fff;border-radius:18px;
-        padding:14px 14px 14px 16px;box-shadow:0 12px 30px rgba(22,41,63,.35);display:flex;gap:12px;align-items:center;max-width:520px;margin:0 auto}
-  .card b{display:block;font-size:15px;margin-bottom:2px}
-  .card span{font-size:13px;color:#CFE6E1;line-height:1.4}
-  .card .grow{flex:1}
-  .card button{border:0;border-radius:12px;font:inherit;font-weight:700;font-size:14px;padding:10px 14px}
-  .card .go{background:#F2A25A;color:#fff}
-  .card .x{background:transparent;color:#9FB3C8;padding:6px 4px;font-size:18px}
-  .hide{display:none}
-  #boot{position:fixed;inset:0;display:grid;place-items:center;color:#4E5F6E;font-size:14px}
+  :root{
+    --navy:#1F3A5C; --navy-2:#2B4C74; --navy-ink:#16293F;
+    --orange:#F2A25A; --orange-d:#E08A3C; --orange-soft:#FCE9D6;
+    --mint:#CFE6E1; --mint-soft:#E8F3F0; --mint-d:#9FCBC3;
+    --paper:#F6F9F8; --card:#FFFFFF; --ink:#1C2A39; --muted:#6A7A88; --line:#E1EAE7;
+    --red:#D2553F; --red-soft:#FBE4DF; --green:#2F8A62; --green-soft:#DDF1E7; --purple:#7558A6; --purple-soft:#ECE6F6;
+    --r-xl:26px; --r-lg:20px; --r-md:14px; --r-sm:10px;
+    --nav-h:74px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 'Be Vietnam Pro',Arial,sans-serif}
+  body{padding-top:env(safe-area-inset-top,0px)}
+  button,input,select,textarea{font:inherit;color:inherit}
+  button{cursor:pointer}
+  :focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+  .hide{display:none!important}
+  .app{max-width:640px;margin:0 auto;padding:0 18px calc(var(--nav-h) + 34px);min-height:100vh}
+  h1,h2,h3{margin:0;color:var(--navy-ink)}
+  .muted{color:var(--muted)}
+
+  /* ---------- Header ---------- */
+  .head{display:flex;align-items:flex-start;gap:12px;padding:22px 0 16px}
+  .head h1{font-size:26px;line-height:1.2;font-weight:800;letter-spacing:-.3px}
+  .head h1 span{color:var(--orange-d)}
+  .head p{margin:4px 0 0;font-size:13.5px;color:var(--muted)}
+  .head .grow{flex:1}
+  .head .icon-btn+.icon-btn{margin-left:-4px}
+  .icon-btn{width:44px;height:44px;border-radius:14px;border:0;background:var(--card);display:grid;place-items:center;position:relative;box-shadow:0 2px 0 var(--line)}
+  .icon-btn .dot{position:absolute;top:8px;right:9px;min-width:18px;height:18px;border-radius:9px;background:var(--orange);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 4px}
+  .back{display:flex;align-items:center;gap:10px;padding:18px 0 8px}
+  .back button{border:0;background:var(--card);width:40px;height:40px;border-radius:12px;display:grid;place-items:center;box-shadow:0 2px 0 var(--line)}
+  .back h2{font-size:19px}
+
+  /* ---------- Hero (navy) ---------- */
+  .hero{background:var(--navy);color:#fff;border-radius:var(--r-xl);padding:20px;display:flex;gap:16px;align-items:center}
+  .hero .grow{flex:1;min-width:0}
+  .hero h3{color:#fff;font-size:16px;font-weight:700}
+  .hero p{margin:4px 0 14px;font-size:13px;color:#C7D4E3}
+  .hero .big{font-size:40px;font-weight:800;line-height:1;margin:6px 0 2px;color:#fff}
+  .ring{width:96px;height:96px;flex:none;position:relative}
+  .ring svg{transform:rotate(-90deg)}
+  .ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:19px;font-weight:800}
+  .ring small{position:absolute;left:0;right:0;bottom:-20px;text-align:center;font-size:11px;color:#C7D4E3}
+  .pill{border:0;border-radius:999px;background:var(--orange);color:#fff;font-weight:700;padding:10px 18px;font-size:14px}
+  .pill:hover{background:var(--orange-d)}
+  .pill.ghost{background:rgba(255,255,255,.12);color:#fff}
+
+  /* ---------- Section ---------- */
+  .sec-t{display:flex;align-items:baseline;justify-content:space-between;margin:26px 0 12px}
+  .sec-t h2{font-size:18px;font-weight:700}
+  .sec-t button{border:0;background:none;color:var(--navy-2);font-weight:600;font-size:13.5px}
+
+  /* ---------- Focus tiles (mint) ---------- */
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .tile{background:var(--mint);border:0;border-radius:var(--r-lg);padding:14px 14px 12px;text-align:left;min-height:112px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+  .tile.soft{background:var(--mint-soft)}
+  .tile.alert{background:var(--red-soft)}
+  .tile.warm{background:var(--orange-soft)}
+  .tile b{font-size:30px;font-weight:800;line-height:1;color:var(--navy-ink)}
+  .tile.alert b{color:var(--red)}
+  .tile span{font-size:13.5px;font-weight:600;color:var(--navy-ink);line-height:1.3}
+  .tile small{font-size:12px;color:var(--muted);font-weight:500}
+  .tile svg.deco{position:absolute;right:-6px;bottom:-6px;opacity:.18}
+
+  /* ---------- Timeline ---------- */
+  .tl{display:grid;grid-template-columns:62px minmax(0,1fr);gap:0 12px}
+  .tl .d{padding-top:12px;text-align:right}
+  .tl .d b{display:block;font-size:17px;font-weight:800;color:var(--navy-ink);line-height:1.1}
+  .tl .d small{font-size:11.5px;color:var(--muted)}
+  .tl .ev{background:var(--mint-soft);border-radius:var(--r-md);padding:12px 14px;margin-bottom:10px;display:flex;gap:12px;align-items:center;border:0;text-align:left;width:100%}
+  .tl .ev.urgent{background:var(--orange-soft)}
+  .tl .ev.over{background:var(--red-soft)}
+  .tl .ev .grow{flex:1;min-width:0}
+  .tl .ev .n{font-weight:700;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tl .ev .s{font-size:12.5px;color:var(--muted)}
+  .today-line{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin:2px 0 10px;color:var(--orange-d);font-size:12px;font-weight:700}
+  .today-line:after{content:'';flex:1;height:2px;background:var(--orange);border-radius:2px}
+
+  .av{width:40px;height:40px;border-radius:13px;background:var(--navy);color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+  .av.m{background:var(--mint-d);color:var(--navy-ink)}
+
+  /* ---------- Badges ---------- */
+  .bd{display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:3px 10px;white-space:nowrap}
+  .b-new{background:#E1E9F4;color:var(--navy-2)} .b-tk{background:#E3F0FA;color:#1D5F8C} .b-td{background:var(--orange-soft);color:#A65E1C} .b-cb{background:var(--purple-soft);color:var(--purple)}
+  .b-hard{background:var(--mint);color:#1F6B60} .b-done{background:var(--green-soft);color:var(--green)} .b-cancel{background:#ECEFF1;color:#5E6B75}
+  .b-Khẩn{background:var(--red-soft);color:var(--red)} .b-Cao{background:var(--orange-soft);color:#A65E1C} .b-Thường{background:#ECEFF1;color:#5E6B75}
+  .ut-Cao{background:var(--red-soft);color:var(--red)} .ut-TB{background:var(--orange-soft);color:#A65E1C} .ut-Thấp,.ut-Không{background:#ECEFF1;color:#5E6B75}
+  .don-gap{background:var(--red-soft);color:var(--red)} .don-cho{background:var(--purple-soft);color:var(--purple)}
+
+  /* ---------- Calendar (navy) ---------- */
+  .cal{background:var(--navy);color:#fff;border-radius:var(--r-xl);padding:18px 16px 20px}
+  .cal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .cal-h b{font-size:18px}
+  .cal-h button{border:0;background:rgba(255,255,255,.1);color:#fff;width:36px;height:36px;border-radius:12px;font-size:18px}
+  .cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+  .cal-g .w{font-size:12px;color:#AFC0D3;padding:4px 0}
+  .cal-g button{border:0;background:none;color:#fff;height:46px;border-radius:12px;position:relative;font-weight:600;font-size:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1;padding:0}
+  .cal-g button.out{color:#5F7896}
+  .cal-g button.has{background:rgba(207,230,225,.16)}
+  .cal-g button.today{box-shadow:inset 0 0 0 2px var(--mint-d)}
+  .cal-g button.sel{background:var(--orange);color:#fff}
+  .cal-g button i{font-style:normal;font-size:10px;font-weight:800;color:var(--orange);margin-top:2px}
+  .cal-g button.sel i{color:#fff}
+  .cal-sum{display:flex;gap:10px;margin-top:14px}
+  .cal-sum div{flex:1;background:rgba(255,255,255,.08);border-radius:14px;padding:10px 12px;font-size:12px;color:#C7D4E3}
+  .cal-sum b{display:block;font-size:20px;color:#fff}
+
+  /* ---------- Ticket cards ---------- */
+  .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+  .chip{border:0;background:var(--card);border-radius:999px;padding:8px 14px;font-size:13.5px;font-weight:600;white-space:nowrap;box-shadow:inset 0 0 0 1px var(--line)}
+  .chip.on{background:var(--navy);color:#fff;box-shadow:none}
+  .chip.kpi{background:var(--orange-soft);color:#A65E1C;box-shadow:none}
+  .searchrow{display:flex;gap:8px;margin-top:10px}
+  .field{position:relative;flex:1}
+  .field svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);opacity:.5}
+  .field input[type=text]{padding-left:40px}
+  input[type=text],input[type=date],input[type=password],select,textarea{width:100%;border:0;border-radius:var(--r-md);padding:12px 14px;background:var(--card);box-shadow:inset 0 0 0 1.5px var(--line);outline:none}
+  input:focus,select:focus,textarea:focus{box-shadow:inset 0 0 0 2px var(--navy-2)}
+  textarea{min-height:84px;resize:vertical}
+  .tk{background:var(--card);border-radius:var(--r-lg);padding:16px;margin-top:12px;box-shadow:inset 0 0 0 1px var(--line);position:relative}
+  .tk:before{content:'';position:absolute;left:0;top:16px;bottom:16px;width:4px;border-radius:0 4px 4px 0;background:var(--mint-d)}
+  .tk.p-Khẩn:before{background:var(--red)} .tk.p-Cao:before{background:var(--orange)} .tk.closed:before{background:#CDD5DA}
+  .tk-h{display:flex;gap:12px;align-items:flex-start}
+  .tk-h .grow{flex:1;min-width:0}
+  .tk-n{font-weight:700;font-size:15.5px}
+  .tk-s{font-size:12.5px;color:var(--muted)}
+  .tk-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;background:var(--mint-soft);border-radius:var(--r-md);padding:10px 12px}
+  .tk-row div{font-size:13px}
+  .tk-row span{display:block;font-size:11.5px;color:var(--muted)}
+  .tk-reason{margin-top:10px;font-size:13.5px}
+  .tk-reason b{color:var(--navy-2)}
+  .steps{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+  .step{font-size:12px;font-weight:600;border-radius:999px;padding:4px 10px;background:#EEF2F1;color:var(--muted)}
+  .step.ok{background:var(--green-soft);color:var(--green)}
+  .tk-foot{margin-top:10px;font-size:12px;color:var(--muted)}
+  .tk-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .btn{border:0;border-radius:12px;padding:11px 16px;font-weight:700;background:var(--navy);color:#fff}
+  .btn:disabled{opacity:.5;cursor:default}
+  .btn.sm{padding:8px 12px;font-size:13px;border-radius:11px}
+  .btn.or{background:var(--orange);color:#fff}
+  .btn.gr{background:var(--green)}
+  .btn.ln{background:var(--card);color:var(--navy);box-shadow:inset 0 0 0 1.5px var(--line)}
+  .btn.rd{background:var(--card);color:var(--red);box-shadow:inset 0 0 0 1.5px var(--red-soft)}
+  .btn.block{width:100%;padding:14px;font-size:15.5px;border-radius:16px}
+  .empty{text-align:center;color:var(--muted);padding:34px 16px;background:var(--mint-soft);border-radius:var(--r-lg);margin-top:12px}
+  .empty b{display:block;color:var(--navy-ink);margin-bottom:4px}
+
+  /* ---------- Form ---------- */
+  .fcard{background:var(--card);border-radius:var(--r-lg);padding:18px;margin-top:14px;box-shadow:inset 0 0 0 1px var(--line)}
+  .fcard h3{font-size:15.5px;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+  .fcard h3 em{font-style:normal;width:26px;height:26px;border-radius:9px;background:var(--mint);display:grid;place-items:center;font-size:13px;color:var(--navy-ink)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .grid .full{grid-column:1/-1}
+  @media(max-width:520px){.grid{grid-template-columns:1fr}}
+  label{display:block;font-size:13px;font-weight:600;color:#3A4A5A;margin-bottom:6px}
+  label .req{color:var(--red)} label .opt{color:var(--muted);font-weight:400}
+  .hint{font-size:12.5px;color:var(--muted);margin-top:6px}
+  .seg{display:flex;background:var(--mint-soft);border-radius:var(--r-md);padding:4px;gap:4px}
+  .seg button{flex:1;border:0;background:none;padding:9px 6px;border-radius:11px;font-size:14px;font-weight:600;color:#3A4A5A}
+  .seg button.on{background:var(--navy);color:#fff}
+  .seg.bad button.on.neg{background:var(--red)}
+  .qual{display:grid;grid-template-columns:1fr 190px;gap:10px 14px;align-items:center}
+  .qual>span{font-size:14px}
+  @media(max-width:460px){.qual{grid-template-columns:1fr}}
+  .picked{display:flex;gap:12px;align-items:center;background:var(--navy);color:#fff;border-radius:var(--r-lg);padding:14px 16px;margin-top:8px}
+  .picked .grow{flex:1;min-width:0}
+  .picked .n{font-weight:700;font-size:16px}
+  .picked .s{font-size:12.5px;color:#C7D4E3}
+  .picked .t{display:inline-block;margin-top:6px;background:var(--orange);color:#fff;font-size:11.5px;font-weight:700;border-radius:999px;padding:3px 10px}
+  .picked .t.none{background:rgba(255,255,255,.18)}
+  .picked button{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:11px;padding:8px 12px;font-weight:600;font-size:13px}
+  .alert{border-radius:var(--r-md);padding:11px 14px;font-size:13.5px;margin-top:12px}
+  .alert.warn{background:var(--orange-soft);color:#8A4A12}
+  .alert.err{background:var(--red-soft);color:#8E2B1B}
+  .list{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+  .item{display:flex;gap:12px;align-items:center;background:var(--card);border:0;border-radius:var(--r-md);padding:11px 12px;text-align:left;box-shadow:inset 0 0 0 1px var(--line)}
+  .item:hover{box-shadow:inset 0 0 0 2px var(--mint-d)}
+  .item .grow{flex:1;min-width:0}
+  .item .s{font-size:12.5px;color:var(--muted)}
+  .send-bar{position:sticky;bottom:calc(var(--nav-h) + 16px);margin-top:18px}
+
+  /* ---------- Việc cần làm ---------- */
+  .todo{display:flex;flex-direction:column;gap:10px}
+  .td-i{display:flex;gap:14px;align-items:center;background:var(--card);border:0;border-radius:var(--r-lg);padding:14px 14px 14px 16px;text-align:left;box-shadow:inset 0 0 0 1px var(--line);width:100%}
+  .td-i .ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;flex:none;font-weight:800;font-size:18px}
+  .td-i .grow{flex:1;min-width:0}
+  .td-i .t1{font-weight:700;font-size:15px;color:var(--navy-ink);line-height:1.3}
+  .td-i .t2{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .td-i .go{background:var(--navy);color:#fff;border-radius:10px;padding:7px 11px;font-size:12.5px;font-weight:700;white-space:nowrap}
+  .td-i.red .ic{background:var(--red-soft);color:var(--red)} .td-i.or .ic{background:var(--orange-soft);color:#A65E1C} .td-i.mt .ic{background:var(--mint);color:var(--navy-ink)}
+  .td-ok{display:flex;gap:12px;align-items:center;background:var(--green-soft);color:#1F6B49;border-radius:var(--r-lg);padding:14px 16px;font-weight:600;font-size:14px}
+  .next{margin-top:10px;font-size:13px;background:var(--orange-soft);color:#8A4A12;border-radius:10px;padding:8px 12px}
+  .ret{margin-top:10px;font-size:13px;background:var(--red-soft);color:#8E2B1B;border-radius:10px;padding:9px 12px}
+  .next.done{background:var(--green-soft);color:#1F6B49}
+  .help ol{margin:10px 0 0;padding-left:20px}
+  .help li{margin-bottom:10px;font-size:14px}
+  .help li b{color:var(--navy-ink)}
+  .stepno{font-size:12.5px;color:var(--muted);font-weight:600;margin:-2px 0 8px 50px}
+
+  /* ---------- Nhóm theo ngày (thả xuống) ---------- */
+  .dg{background:var(--card);border-radius:var(--r-lg);box-shadow:inset 0 0 0 1px var(--line);margin-bottom:10px;overflow:hidden}
+  .dg summary{list-style:none;display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer}
+  .dg summary::-webkit-details-marker{display:none}
+  .dg .dd{width:52px;text-align:center;flex:none;background:var(--mint-soft);border-radius:12px;padding:6px 0}
+  .dg .dd b{display:block;font-size:16px;font-weight:800;color:var(--navy-ink);line-height:1.1}
+  .dg .dd small{font-size:11px;color:var(--muted)}
+  .dg .grow{flex:1;min-width:0}
+  .dg .c1{font-weight:700;font-size:14.5px}
+  .dg .c2{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dg .chev{transition:transform .2s}
+  .dg[open] .chev{transform:rotate(180deg)}
+  .dg .body{padding:0 12px 4px}
+  .dg .body .tl{grid-template-columns:minmax(0,1fr);gap:0}
+  .dg .body .tl .d{display:none}
+  .flow{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:10px}
+  .flow .arr{color:#B6C3CC;font-size:12px}
+
+  /* ---------- Bottom nav ---------- */
+  .nav{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom,0px));width:min(604px,calc(100% - 24px));height:var(--nav-h);background:var(--card);border-radius:24px;box-shadow:0 8px 30px rgba(31,58,92,.14);display:flex;align-items:center;justify-content:space-around;padding:0 8px;z-index:30}
+  .nav button{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:600;color:#9AA8B4;min-width:58px;padding:6px 0}
+  .nav button.on{color:var(--navy)}
+  .nav button.on svg{stroke:var(--navy)}
+  .nav .plus-w{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:700;color:var(--orange-d);margin-top:-30px}
+  .nav .plus{width:58px;height:58px;border-radius:50%;background:var(--orange);display:grid;place-items:center;box-shadow:0 0 0 7px var(--paper),0 8px 18px rgba(242,162,90,.45);padding:0;min-width:0}
+  .nav .plus:hover{background:var(--orange-d)}
+
+  /* ---------- Login ---------- */
+  .login{min-height:100vh;display:flex;flex-direction:column;justify-content:flex-end;background:var(--navy)}
+  .login .top{flex:1;display:flex;flex-direction:column;justify-content:center;padding:40px 28px;color:#fff;max-width:520px;margin:0 auto;width:100%}
+  .login .top h1{color:#fff;font-size:30px;font-weight:800;line-height:1.2}
+  .login .top h1 span{color:var(--orange)}
+  .login .top p{color:#C7D4E3;margin:10px 0 0;font-size:14px}
+  .login .sheet{background:var(--paper);border-radius:30px 30px 0 0;padding:28px 24px 40px}
+  .login .sheet>div{max-width:440px;margin:0 auto}
+  .login input{text-align:center;letter-spacing:4px;font-weight:700;font-size:20px;text-transform:uppercase;padding:15px}
+  .login .deco{display:flex;gap:10px;margin-top:26px}
+  .login .deco i{height:10px;border-radius:5px;background:var(--mint-d)}
+
+  /* ---------- Sheet / toast / loader ---------- */
+  .icon-btn .dot.red{background:var(--red);top:5px;right:5px;box-shadow:0 0 0 2px var(--paper)}
+  .icon-btn .dot.mini{min-width:10px;width:10px;height:10px;padding:0;top:8px;right:8px}
+  .nf-h{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin:6px 2px 8px}
+  .nf-h b{background:var(--red);color:#fff;border-radius:9px;padding:1px 7px;margin-left:4px;font-size:11px}
+  .nf-ok{font-size:13px;color:var(--green);background:var(--green-soft);border-radius:12px;padding:10px 12px;margin-bottom:10px;font-weight:600}
+  .nf-i.dn{opacity:.6}
+  .nf-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .nf-top h3{flex:1;margin:0}
+  .nf-top button{border:0;background:none;color:var(--navy);font:inherit;font-size:13px;font-weight:700;padding:6px 2px}
+  .nf-list{max-height:64vh;overflow:auto;margin:0 -6px;padding:0 6px}
+  .nf-i{display:flex;gap:11px;width:100%;text-align:left;border:0;background:var(--card);border-radius:14px;padding:11px 12px;margin-bottom:8px;font:inherit;color:inherit;box-shadow:inset 0 0 0 1px var(--line)}
+  .nf-i.un{background:var(--mint-soft);box-shadow:none}
+  .nf-i .ic{width:34px;height:34px;flex:none;border-radius:11px;display:grid;place-items:center;font-size:15px;background:var(--mint);color:var(--navy-ink)}
+  .nf-i .ic.red{background:var(--red-soft);color:var(--red)} .nf-i .ic.or{background:var(--orange-soft);color:#A65E1C} .nf-i .ic.gr{background:var(--green-soft);color:var(--green)}
+  .nf-i .t1{font-size:13.5px;font-weight:700;line-height:1.35;color:var(--navy-ink)}
+  .nf-i .t2{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.4}
+  .nf-i .t3{font-size:11.5px;color:#8A97A3;margin-top:4px}
+  .nf-i .u{width:8px;height:8px;border-radius:50%;background:var(--red);flex:none;margin-top:6px}
+  .modal{position:fixed;inset:0;background:rgba(22,41,63,.45);display:flex;align-items:flex-end;justify-content:center;z-index:50}
+  .modal .box{background:var(--paper);width:100%;max-width:520px;border-radius:26px 26px 0 0;padding:10px 20px 26px}
+  .modal .grab{width:44px;height:5px;border-radius:3px;background:#CBD5DC;margin:0 auto 14px}
+  .modal h3{font-size:18px;margin-bottom:4px}
+  .modal .acts{display:flex;gap:10px;margin-top:16px}
+  .modal .acts .btn{flex:1}
+  .toast{position:fixed;left:50%;bottom:calc(var(--nav-h) + 26px);transform:translateX(-50%);background:var(--navy-ink);color:#fff;padding:12px 18px;border-radius:14px;font-size:14px;z-index:60;max-width:92vw;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  .toast.err{background:var(--red)}
+  .loading{position:fixed;inset:0;background:rgba(246,249,248,.65);display:grid;place-items:center;z-index:70}
+  .spin{width:38px;height:38px;border:4px solid var(--mint);border-top-color:var(--orange);border-radius:50%;animation:s .8s linear infinite}
+  @keyframes s{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){.spin{animation-duration:2.4s}}
 </style>
 </head>
 <body>
-<div id="boot">Đang mở Báo thôi việc…</div>
-<iframe id="app" title="Báo thôi việc"></iframe>
 
-<div id="cInstall" class="card hide">
-  <div class="grow"><b>Cài app lên màn hình chính</b><span>Bấm nút <b style="display:inline">Chia sẻ</b> (ô vuông có mũi tên ↑) → <b style="display:inline">Thêm vào MH chính</b>. Sau đó mở app từ biểu tượng mới để nhận thông báo.</span></div>
-  <button class="x" data-close="cInstall" aria-label="Đóng">✕</button>
-</div>
-<div id="cPush" class="card hide">
-  <div class="grow"><b>Bật thông báo</b><span id="pushMsg">Nhận ngay việc mới và số đỏ trên biểu tượng app.</span></div>
-  <button class="go" id="btnPush">Bật</button>
-  <button class="x" data-close="cPush" aria-label="Để sau">✕</button>
-</div>
-<div id="cInfo" class="card hide">
-  <div class="grow"><b id="infoT"></b><span id="infoM"></span></div>
-  <button class="x" data-close="cInfo" aria-label="Đóng">✕</button>
+<!-- ============ ĐĂNG NHẬP ============ -->
+<div id="vLogin" class="login hide">
+  <div class="top">
+    <svg width="54" height="54" viewBox="0 0 54 54" fill="none"><rect width="54" height="54" rx="16" fill="#F2A25A"/><path d="M17 20h20M17 27h14M17 34h9" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/><circle cx="37" cy="34" r="5" stroke="#fff" stroke-width="3"/></svg>
+    <h1 style="margin-top:22px">Báo thôi việc<br><span>nhanh, đủ, đúng người</span></h1>
+    <p>Báo và theo dõi nhân viên nghỉ việc tại chi nhánh – thông tin đến Thư ký Ban, Tuyển dụng và C&amp;B ngay khi bạn gửi.</p>
+    <div class="deco"><i style="width:46px;background:#F2A25A"></i><i style="width:22px"></i><i style="width:12px"></i></div>
+  </div>
+  <div class="sheet"><div>
+    <label for="code">Mã đăng nhập (4 số)</label>
+    <input id="code" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="• • • •" maxlength="4" style="font-size:24px;letter-spacing:14px;text-align:center">
+    <div class="hint">Mã 4 số do BP. Tuyển dụng gửi qua email cho riêng bạn.</div>
+    <div id="loginErr" class="alert err hide"></div>
+    <button class="btn or block" style="margin-top:16px" onclick="doLogin()">Đăng nhập</button>
+  </div></div>
 </div>
 
-<script src="config.js"></script>
+<!-- ============ ỨNG DỤNG ============ -->
+<div id="vApp" class="hide">
+  <div class="app">
+
+    <!-- TỔNG QUAN -->
+    <section id="pHome">
+      <div class="head">
+        <div class="grow"><h1 id="hello"></h1><p id="scopeTxt"></p></div>
+        <button class="icon-btn bell" onclick="openNoti()" aria-label="Thông báo" title="Thông báo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1F3A5C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8.5 3 8.5H3S6 15 6 8"/><path d="M10.3 20a1.9 1.9 0 0 0 3.4 0"/></svg><span class="dot red hide"></span></button>
+        <button class="icon-btn" onclick="openHelp()" aria-label="Hướng dẫn sử dụng" title="Hướng dẫn sử dụng">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1F3A5C" stroke-width="2.2"><circle cx="12" cy="12" r="9.5"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.2-2.5 3.8"/><circle cx="12" cy="17.3" r=".6" fill="#1F3A5C"/></svg>
+        </button>
+      </div>
+      <div class="hero">
+        <div class="grow">
+          <h3 id="heroT"></h3>
+          <p id="heroP" style="margin-bottom:14px"></p>
+          <button class="pill" id="heroBtn"></button>
+        </div>
+      </div>
+
+      <div class="sec-t"><h2>Việc bạn cần làm</h2></div>
+      <div class="todo" id="todo"></div>
+
+      <div class="sec-t"><h2>Sắp nghỉ việc</h2><button onclick="go('cal')">Mở lịch</button></div>
+      <p class="muted" style="margin:-6px 0 10px;font-size:13px">Bấm vào tên để xem chi tiết phiếu.</p>
+      <div id="upcoming"></div>
+    </section>
+
+    <!-- LỊCH -->
+    <section id="pCal" class="hide">
+      <div class="head"><div class="grow"><h1>Lịch nghỉ việc</h1><p>Chọn ngày để xem ai nghỉ từ ngày đó</p></div><button class="icon-btn bell" onclick="openNoti()" aria-label="Thông báo" title="Thông báo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1F3A5C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8.5 3 8.5H3S6 15 6 8"/><path d="M10.3 20a1.9 1.9 0 0 0 3.4 0"/></svg><span class="dot red hide"></span></button><button class="icon-btn" onclick="openHelp()" aria-label="Hướng dẫn sử dụng" title="Hướng dẫn sử dụng">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1F3A5C" stroke-width="2.2"><circle cx="12" cy="12" r="9.5"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.2-2.5 3.8"/><circle cx="12" cy="17.3" r=".6" fill="#1F3A5C"/></svg>
+        </button></div>
+      <div class="cal">
+        <div class="cal-h"><button onclick="calMove(-1)" aria-label="Tháng trước">‹</button><b id="calTitle"></b><button onclick="calMove(1)" aria-label="Tháng sau">›</button></div>
+        <div class="cal-g" id="calGrid"></div>
+        <div class="cal-sum"><div><b id="cMonth">0</b>nghỉ trong tháng</div><div><b id="cOpen">0</b>còn đang xử lý</div></div>
+      </div>
+      <div class="sec-t"><h2 id="calDayTitle"></h2></div>
+      <div id="calDay"></div>
+    </section>
+
+    <!-- DANH SÁCH -->
+    <section id="pList" class="hide">
+      <div class="head"><div class="grow"><h1>Danh sách phiếu</h1><p id="listSub"></p></div><button class="icon-btn bell" onclick="openNoti()" aria-label="Thông báo" title="Thông báo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1F3A5C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8.5 3 8.5H3S6 15 6 8"/><path d="M10.3 20a1.9 1.9 0 0 0 3.4 0"/></svg><span class="dot red hide"></span></button><button class="icon-btn" onclick="openHelp()" aria-label="Hướng dẫn sử dụng" title="Hướng dẫn sử dụng">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1F3A5C" stroke-width="2.2"><circle cx="12" cy="12" r="9.5"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.2-2.5 3.8"/><circle cx="12" cy="17.3" r=".6" fill="#1F3A5C"/></svg>
+        </button></div>
+      <div class="chips" id="stChips">
+        <button class="chip on" data-st="open" onclick="setSt(this)">Đang xử lý</button>
+        <button class="chip" data-st="closed" onclick="setSt(this)">Đã đóng</button>
+        <button class="chip" data-st="all" onclick="setSt(this)">Tất cả</button>
+        <button class="chip kpi hide" id="kpiChip" onclick="clearKpi()"></button>
+      </div>
+      <div class="searchrow">
+        <div class="field"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="fQ" type="text" placeholder="Tìm tên, mã NV, mã phiếu" oninput="renderList()"></div>
+        <select id="fCN" onchange="renderList()" style="width:auto;max-width:44%"></select>
+      </div>
+      <div id="tkList"></div>
+    </section>
+
+    <!-- BÁO THÔI VIỆC -->
+    <section id="pNew" class="hide">
+      <div class="back"><button onclick="newBack()" aria-label="Quay lại"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1F3A5C" stroke-width="2.4"><path d="m15 18-6-6 6-6"/></svg></button><h2 id="newTitle">Chọn nhân viên</h2></div>
+
+      <div id="pickStep">
+        <div class="searchrow">
+          <div class="field"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input id="q" type="text" placeholder="Tìm theo tên hoặc mã NV" oninput="renderStaff()"></div>
+          <select id="cnSel" onchange="loadStaff()" style="width:auto;max-width:40%"></select>
+        </div>
+        <div class="alert" style="background:var(--mint-soft);color:var(--navy-ink);margin-top:12px"><b>Bước 1/2:</b> bấm vào tên nhân viên sắp nghỉ việc. Gõ tên hoặc mã NV để tìm nhanh.</div>
+        <div class="hint" id="staffHint"></div>
+        <div id="staffList" class="list"></div>
+      </div>
+
+      <div id="formStep" class="hide">
+        <div class="picked">
+          <div class="av" style="background:var(--orange)" id="pAv"></div>
+          <div class="grow"><div class="n" id="pName"></div><div class="s" id="pMeta"></div><span class="t" id="pLoai"></span></div>
+          <button onclick="unpick()">Đổi</button>
+        </div>
+        <div class="alert" style="background:var(--mint-soft);color:var(--navy-ink)"><b>Bước 2/2:</b> điền 3 phần bên dưới rồi bấm <b>Gửi thông tin thôi việc</b>. App sẽ tự báo Thư ký Ban, Tuyển dụng và C&amp;B qua chuông thông báo.</div>
+
+        <div class="fcard">
+          <h3><em>1</em>Thời gian</h3>
+          <div class="grid">
+            <div class="full"><label>Loại thôi việc <span class="req">*</span></label><select id="fLoaiTV" onchange="onLoaiTV()"></select></div>
+            <div><label>Ngày nộp đơn <span class="req" id="nopReq">*</span><span class="opt hide" id="nopOpt">(không bắt buộc khi nghỉ ngang)</span></label><input id="fNop" type="date" onchange="checkNotice()"></div>
+            <div><label>Ngày thôi việc <span class="req">*</span></label><input id="fTV" type="date" onchange="onTV()"><div class="hint">Ngày đầu tiên nhân viên nghỉ</div></div>
+            <div><label>Ngày làm việc cuối cùng</label><input id="fCuoi" type="date" onchange="cuoiTouched=true"><div class="hint">Tự điền trước ngày thôi việc 1 ngày</div></div>
+            <div><label>Cần tuyển thay <span class="req">*</span></label><div class="seg" data-f="tuyenThay"><button>Có</button><button>Không</button></div></div>
+          </div>
+          <div id="noticeMsg" class="alert warn hide"></div>
+          <div id="duyetBox" class="hide" style="margin-top:10px">
+            <label>Quản lý đồng ý cho nghỉ trước thời hạn báo trước?</label><div class="seg" data-f="duyetSom"><button>Có</button><button>Không</button></div>
+            <input id="fSom" type="text" placeholder="Lý do đồng ý (vd: đã có người thay, NV có việc gia đình gấp)" style="margin-top:8px">
+          </div>
+        </div>
+
+        <div class="fcard">
+          <h3><em>2</em>Lý do</h3>
+          <label>Lý do thôi việc <span class="req">*</span></label><select id="fLD" onchange="onLD()"></select><div class="hint" id="ldHint"></div>
+          <label style="margin-top:14px">Diễn giải cụ thể <span class="req">*</span></label>
+          <textarea id="fDG" placeholder="Ví dụ: Trùng lịch học buổi tối từ học kỳ mới, không sắp xếp được ca."></textarea>
+        </div>
+
+        <div class="fcard">
+          <h3><em>3</em>Đánh giá của quản lý</h3>
+          <div class="qual" id="qualBox"></div>
+          <div class="grid" style="margin-top:16px">
+            <div><label>Có biên bản kỷ luật / cam kết <span class="req">*</span></label><div class="seg bad" data-f="kyLuat"><button class="neg">Có</button><button>Không</button></div></div>
+            <div><label>Đồng ý tái tuyển <span class="req">*</span></label><div class="seg bad" data-f="taiTuyen"><button>Có</button><button class="neg">Không</button></div></div>
+            <div class="full"><label>Nhận xét quá trình làm việc <span class="opt">(không bắt buộc)</span></label><textarea id="fNX"></textarea></div>
+          </div>
+        </div>
+
+        <div id="formErr" class="alert err hide"></div>
+        <div class="send-bar"><button class="btn or block" id="btnSend" onclick="send()">Gửi thông tin thôi việc</button></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- THANH ĐIỀU HƯỚNG -->
+  <nav class="nav">
+    <button id="nHome" onclick="go('home')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9AA8B4" stroke-width="2"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg>Trang chủ</button>
+    <button id="nCal" onclick="go('cal')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9AA8B4" stroke-width="2"><rect x="3" y="4.5" width="18" height="16.5" rx="3"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>Lịch nghỉ</button>
+    <div class="plus-w" id="nNew"><button class="plus" onclick="openNew()" aria-label="Báo nghỉ việc"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>Báo nghỉ</div>
+    <button id="nList" onclick="go('list')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9AA8B4" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1.2"/><circle cx="3.5" cy="12" r="1.2"/><circle cx="3.5" cy="18" r="1.2"/></svg>Tất cả phiếu</button>
+    <button id="nMe" onclick="openMe()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9AA8B4" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Tài khoản</button>
+  </nav>
+</div>
+
+<div id="modal" class="modal hide" onclick="if(event.target===this)closeModal()"><div class="box" id="modalBox"></div></div>
+<div id="toast" class="toast hide" role="status"></div>
+<div id="loading" class="loading hide"><div style="text-align:center"><div class="spin" style="margin:0 auto"></div><div id="loadMsg" style="margin-top:12px;font-weight:600;color:var(--navy)">Đang lưu, vui lòng chờ…</div></div></div>
+
 <script>
-// Firebase tải riêng: nếu mạng chặn Firebase thì app vẫn mở bình thường, chỉ thiếu thông báo đẩy.
-const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
-const C = window.TV_CONFIG, $ = id => document.getElementById(id);
-const ls = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
-const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-const hasNoti = 'Notification' in window && 'serviceWorker' in navigator;
-const device = (isIOS ? 'iPhone/iPad' : /android/i.test(navigator.userAgent) ? 'Android' : 'Máy tính') + (standalone ? ' – app' : ' – trình duyệt');
-let appWin = null, token = null, swReg = null, messaging = null, fm = null;
+const QUALS=[['Q1','Lịch sự, lễ phép, tử tế'],['Q2','Nhanh nhẹn, năng động, chủ động'],['Q3','Gọn gàng, sạch sẽ, cẩn thận'],['Q4','Siêng năng, kiên trì'],['Q5','Trung thực, chịu học hỏi']];
+const ST_CLS={'Mới gửi':'b-new','Trả về chi nhánh':'b-Khẩn','Chờ Thư ký Ban nhận đơn sửa':'b-tk','Thư ký Ban đã nhận':'b-tk','Đang tuyển thay':'b-td','C&B đã xử lý':'b-cb','Đã có đơn cứng':'b-hard','Hoàn tất':'b-done','Rút đơn':'b-cancel'};
+const OPEN=['Mới gửi','Trả về chi nhánh','Chờ Thư ký Ban nhận đơn sửa','Thư ký Ban đã nhận','Đang tuyển thay','C&B đã xử lý','Đã có đơn cứng'];
+const WD=['CN','T2','T3','T4','T5','T6','T7'];
+let lastLoad=0,TOKEN=null,BOOT=null,STAFF=[],PICK=null,SEG={},TICKETS=[],stFilter='open',kpiFilter=null,cuoiTouched=false,PAGE='home',calM=null,calSel=null,loaded=false;
 
-// 1. Mở web app trong khung
-$('app').src = C.execUrl;
-$('app').addEventListener('load', () => $('boot').classList.add('hide'));
+/* ---------- hạ tầng ---------- */
+const PWA_ORIGIN=(()=>{const o='';return /^https:\/\/[^/]+$/.test(o)?o:''})();
+const $=id=>document.getElementById(id);
+// Dữ liệu màn hình lần mở trước – hiện ngay khi mở app, rồi cập nhật ngầm (xóa khi đăng xuất)
+const LC={get(){try{return JSON.parse(localStorage.getItem('tv_last')||'null')}catch(e){return null}},set(v){try{v?localStorage.setItem('tv_last',JSON.stringify(v)):localStorage.removeItem('tv_last')}catch(e){}}};
+const store={get(){try{return localStorage.getItem('tv_token')}catch(e){return null}},set(v){try{v?localStorage.setItem('tv_token',v):localStorage.removeItem('tv_token')}catch(e){}}};
+// Gọi máy chủ: mở bằng link Google (máy tính) → google.script.run; app cài trên điện thoại → gọi thẳng API (doPost)
+const API_URL=(window.TV_CONFIG&&TV_CONFIG.execUrl)||'';
+function callFail(m,rej){m=String(m||'Lỗi kết nối').replace(/^Error:\s*/,'');if(m.indexOf('SESSION')>=0)toLogin('Phiên đăng nhập đã hết hạn. Nhập lại mã cá nhân để tiếp tục.');rej(new Error(m))}
+function call(fn,...args){return new Promise((res,rej)=>{
+  if(window.google&&google.script&&google.script.run){google.script.run.withSuccessHandler(res).withFailureHandler(e=>callFail((e&&e.message)||String(e),rej))[fn](...args);return}
+  fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({fn,args}),redirect:'follow'})
+    .then(r=>r.json()).then(j=>j&&j.ok?res(j.data):callFail(j&&j.error,rej))
+    .catch(()=>callFail('Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.',rej))})}
+function busy(on,msg){$('loading').classList.toggle('hide',!on);if(on)$('loadMsg').textContent=msg||'Đang lưu, vui lòng chờ…'}
+let tT;function toast(m,err){const t=$('toast');t.textContent=m;t.className='toast'+(err?' err':'');clearTimeout(tT);tT=setTimeout(()=>t.classList.add('hide'),err?6000:3500)}
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const dmy=s=>s?s.split('-').reverse().join('/'):'';
+const dm=s=>s?s.slice(8,10)+'/'+s.slice(5,7):'';
+const initials=n=>{const p=String(n).trim().split(/\s+/);return((p[p.length-2]||'')[0]||'')+((p[p.length-1]||'')[0]||'')};
+const pad=n=>String(n).padStart(2,'0');
+const isoOf=x=>x.getFullYear()+'-'+pad(x.getMonth()+1)+'-'+pad(x.getDate());
+const addDays=(s,n)=>{const[y,m,d]=s.split('-').map(Number);return isoOf(new Date(y,m-1,d+n))};
+const todayIso=()=>isoOf(new Date());
+const diff=(a,b)=>{const p=s=>{const[y,m,d]=s.split('-').map(Number);return Date.UTC(y,m-1,d)};return Math.round((p(b)-p(a))/864e5)};
+const wd=s=>{const[y,m,d]=s.split('-').map(Number);return WD[new Date(y,m-1,d).getDay()]};
+const norm=s=>String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'d');
+const isOpen=p=>OPEN.includes(p.trangThai);
+const isNN=p=>/^NN/.test(p.loaiTV||'');
 
-// 2. Nhận tin từ web app (chỉ chấp nhận khung Apps Script)
-window.addEventListener('message', e => {
-  let host = ''; try { host = new URL(e.origin).hostname; } catch (_) {}
-  if (!/\.googleusercontent\.com$/.test(host) || !e.data || typeof e.data !== 'object') return;
-  if (e.data.type === 'tv-hello') { appWin = e.source; sendToken(false); }
-  if (e.data.type === 'tv-badge' && 'setAppBadge' in navigator) {
-    (e.data.n ? navigator.setAppBadge(e.data.n) : navigator.clearAppBadge()).catch(() => {});
+/* ---------- đăng nhập ---------- */
+function toLogin(msg){TOKEN=null;clearInterval(notiTimer);store.set(null);LC.set(null);BOOT=null;$('vApp').dataset.on='';$('vApp').classList.add('hide');$('vLogin').classList.remove('hide');const e=$('loginErr');if(msg){e.textContent=msg;e.classList.remove('hide')}else e.classList.add('hide');setTimeout(()=>$('code').focus(),50)}
+$('code').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+$('code').addEventListener('input',e=>{const v=e.target.value.replace(/\D/g,'').slice(0,4);e.target.value=v;if(v.length===4)doLogin()});
+async function doLogin(){const c=$('code').value.trim();if(!c)return;busy(true,'Đang đăng nhập…');try{const r=await call('login',c);TOKEN=r.token;store.set(TOKEN);$('code').value='';await start(r.data)}catch(e){const el=$('loginErr');el.textContent=e.message;el.classList.remove('hide')}finally{busy(false)}}
+async function doLogout(){closeModal();try{if(FCM)await call('unregisterPush',TOKEN,FCM);FCM=null;toShell({type:'tv-logout'});await call('logout',TOKEN)}catch(e){}toLogin()}
+
+/* Mở app: 1 lần gọi server lấy đủ dữ liệu (startApp). stale = đang hiện dữ liệu lần trước trong lúc chờ. */
+async function start(data){apply(data||await call('startApp',TOKEN),false)}
+function apply(D,stale){
+  const sameBoot=BOOT&&JSON.stringify(BOOT)===JSON.stringify(D.boot),first=$('vApp').dataset.on!=='1';
+  BOOT=D.boot;
+  $('vLogin').classList.add('hide');$('vApp').classList.remove('hide');
+  if(!sameBoot){   // dựng lại khung (lời chào, chi nhánh, danh mục form) chỉ khi dữ liệu nền thay đổi
+    $('hello').innerHTML='Xin chào,<br><span>'+esc(BOOT.user.name)+'</span>';
+    $('scopeTxt').textContent=BOOT.user.role+(BOOT.user.all?' – toàn hệ thống':' – chi nhánh '+BOOT.cns.join(', '));
+    const opts=BOOT.cns.map(c=>`<option>${esc(c)}</option>`).join('');
+    $('cnSel').innerHTML=opts;$('cnSel').classList.toggle('hide',BOOT.cns.length<=1);
+    $('fCN').innerHTML='<option value="">Mọi chi nhánh</option>'+opts;$('fCN').classList.toggle('hide',BOOT.cns.length<=1);
+    $('fLoaiTV').innerHTML='<option value="">Chọn loại</option>'+BOOT.loaiTV.map(l=>`<option>${esc(l.label)}</option>`).join('');
+    const g={};BOOT.reasons.forEach(r=>(g[r.group]=g[r.group]||[]).push(r));
+    $('fLD').innerHTML='<option value="">Chọn lý do</option>'+Object.keys(g).map(k=>`<optgroup label="${esc(k)}">`+g[k].map(r=>`<option value="${r.code}">${r.code} – ${esc(r.name)}</option>`).join('')+'</optgroup>').join('');
+    $('qualBox').innerHTML=QUALS.map(([k,t])=>`<span>${t} <span class="req" style="color:var(--red)">*</span></span><div class="seg bad" data-f="${k}"><button>Đạt</button><button class="neg">Không đạt</button></div>`).join('');
+    bindSegs();
+    $('nNew').classList.toggle('hide',!BOOT.perms.submit);
   }
-});
-let pendingFresh = false;
-function sendToken(fresh) {
-  if (!token) return;
-  if (appWin) { appWin.postMessage({ type: 'tv-token', token, device, fresh: fresh || pendingFresh }, '*'); pendingFresh = false; }
-  else if (fresh) pendingFresh = true;   // gửi khi web app đăng nhập xong
+  TICKETS=D.tickets||[];CONTRACTS=D.contracts||[];loaded=true;lastLoad=Date.now();
+  if(first){$('vApp').dataset.on='1';go('home')}else if(PAGE!=='new')renderPage();
+  if(stale){if(D.noti){NOTI=D.noti;setBadge()}return}
+  LC.set({code:BOOT.user.code,boot:D.boot,tickets:TICKETS,contracts:CONTRACTS,noti:D.noti});
+  startNoti(D.noti);helloShell();
+  let seen=null;try{seen=localStorage.getItem('tv_help_'+BOOT.user.code)}catch(e){}
+  if(!seen){openHelp();try{localStorage.setItem('tv_help_'+BOOT.user.code,'1')}catch(e){}}
 }
 
-// 3. Service worker + Firebase (chỉ tải khi cần)
-async function initPush() {
-  if (messaging) return true;
-  swReg = await navigator.serviceWorker.register('sw.js', { scope: './' });
-  await navigator.serviceWorker.ready;
-  const [app, m] = await Promise.all([import(FB + 'firebase-app.js'), import(FB + 'firebase-messaging.js')]);
-  if (!(await m.isSupported().catch(() => false))) throw new Error('Trình duyệt này chưa hỗ trợ thông báo đẩy.');
-  fm = m; messaging = m.getMessaging(app.initializeApp(C.firebase));
-  return true;
+/* ---------- điều hướng ---------- */
+function go(p){
+  PAGE=p;['home','cal','list','new'].forEach(k=>$('p'+k[0].toUpperCase()+k.slice(1)).classList.toggle('hide',k!==p));
+  [['home','nHome'],['cal','nCal'],['list','nList']].forEach(([k,id])=>$(id).classList.toggle('on',k===p));
+  window.scrollTo(0,0);
+  if(p==='new')return;
+  if(!loaded||Date.now()-lastLoad>60000)loadTickets();else renderPage();
 }
-async function fetchToken(fresh) {
-  await initPush();
-  token = await fm.getToken(messaging, { vapidKey: C.vapidKey, serviceWorkerRegistration: swReg });
-  if (!token) throw new Error('Không lấy được mã thiết bị.');
-  ls.set('tv_push_ok', '1');
-  sendToken(fresh);
+function renderPage(){if(PAGE==='home')renderHome();else if(PAGE==='cal')renderCal();else if(PAGE==='list')renderList()}
+async function loadTickets(){
+  try{TICKETS=await call('listPhieu',TOKEN);loaded=true;lastLoad=Date.now();renderPage();loadContracts()}
+  catch(e){toast(e.message,true)}
 }
 
-// 4. Khung gợi ý: cài app / bật thông báo / hướng dẫn khi bị tắt
-const later = k => ls.get('tv_hide_' + k) && Date.now() - +ls.get('tv_hide_' + k) < 86400000;
-function info(t, m) { if (later('cInfo')) return; $('infoT').textContent = t; $('infoM').textContent = m; $('cInfo').classList.remove('hide'); }
-function showCards() {
-  if (isIOS && !standalone) { if (!later('cInstall')) $('cInstall').classList.remove('hide'); return; }
-  if (!hasNoti) { if (isIOS) info('Chưa nhận được thông báo', 'Cần iPhone chạy iOS 16.4 trở lên (Cài đặt → Cài đặt chung → Cập nhật phần mềm).'); return; }
-  if (Notification.permission === 'default' && !later('cPush')) $('cPush').classList.remove('hide');
-  if (Notification.permission === 'denied') info('Thông báo đang bị tắt', isIOS
-    ? 'Vào Cài đặt iPhone → Thông báo → Thôi việc → bật Cho phép thông báo, Âm thanh, Biểu tượng.'
-    : 'Bấm biểu tượng ổ khóa / ⋮ → Cài đặt trang web → Thông báo → Cho phép.');
-  if (Notification.permission === 'granted') fetchToken(false).catch(e => console.warn('push', e));
+/* ---------- trang chủ ---------- */
+function stats(){
+  const t=todayIso(),open=TICKETS.filter(isOpen),left=p=>p.tv?diff(t,p.tv):999;
+  return{open,t,week:open.filter(p=>left(p)>=0&&left(p)<=7),overdue:open.filter(p=>left(p)<=0),
+    noHard:open.filter(p=>!p.donCung&&left(p)<=7),noHardAll:open.filter(p=>!p.donCung),noTK:open.filter(KPI.noTK[1]),ret:open.filter(p=>p.trangThai===RET),resent:open.filter(p=>p.trangThai===RES),noTD:open.filter(KPI.noTD[1]),noCB:open.filter(KPI.noCB[1]),
+    month:TICKETS.filter(p=>p.trangThai!=='Rút đơn'&&p.tv&&p.tv.slice(0,7)===t.slice(0,7))};
 }
-document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => { ls.set('tv_hide_' + b.dataset.close, String(Date.now())); $(b.dataset.close).classList.add('hide'); });
-$('btnPush').onclick = async () => {
-  // Hỏi quyền NGAY khi bấm (iPhone chỉ cho phép hỏi trong lúc người dùng bấm)
-  let p = 'default';
-  try { p = await Notification.requestPermission(); } catch (e) { p = Notification.permission; }
-  if (p !== 'granted') { $('cPush').classList.add('hide'); if (p === 'denied') showCards(); return; }
-  $('pushMsg').textContent = 'Đang bật…'; $('btnPush').disabled = true;
-  try { await fetchToken(true); $('cPush').classList.add('hide'); }
-  catch (e) { $('pushMsg').textContent = 'Chưa bật được: ' + (e && e.message || e) + ' – thử đóng hẳn app rồi mở lại.'; $('btnPush').disabled = false; }
+function todoItems(s){
+  const P=BOOT.perms,r=BOOT.user.role,items=[];
+  const add=(k,n,cls,t1,t2,btn)=>items.push({k,n,cls,t1,t2,btn});
+  if(P.branch||P.manage){const near=CONTRACTS.filter(c=>c.con<=7).length;add('hd',CONTRACTS.length,near?'red':'or','Hợp đồng sắp hết hạn','Gia hạn hoặc báo nghỉ'+(near?` – ${near} HĐ còn ≤ 7 ngày`:''),'Xem')}
+  if(P.manage)add('ret',s.ret.length,'red','Sửa và gửi lại đơn bị trả về','Bộ phận xử lý trả đơn – xem lý do trên phiếu','Xem lý do');
+  if(P.manage)add('overdue',s.overdue.length,'red','Xác nhận nhân viên đã nghỉ','Đã đến ngày thôi việc – mở phiếu, bấm "Xác nhận đã nghỉ"','Xác nhận');
+  if(P.tk)add('resent',s.resent.length,'red','Nhận đơn đã sửa, bàn giao lại','Chi nhánh đã gửi lại đơn – nhận rồi bàn giao cho bộ phận đã trả','Bàn giao');
+  if(P.tk){add('noTK',s.noTK.length,'or','Bước 1 – Nhận đơn giấy, chuyển Tuyển dụng','Bấm khi đơn giấy đã về tới Thư ký Ban','Nhận đơn');
+           add('noHardAll',s.noHardAll.length,'mt','Ghi nhận đơn giấy','Bấm "Đã nhận đơn" khi đơn giấy về tới Thư ký Ban','Ghi nhận')}
+  if(P.td)add('noTD',s.noTD.length,'or','Bước 2 – Nhận đơn, chuyển C&B','Thư ký Ban đã chuyển – lên kế hoạch tuyển thay','Nhận đơn');
+  if(P.cb){add('noCB',s.noCB.length,'or','Bước 3 – Nhận đơn, xử lý bảo hiểm','Tuyển dụng đã chuyển, chờ C&B','Nhận đơn');
+           if(!BOOT.hasTK)add('noHardAll',s.noHardAll.length,'mt','Ghi nhận đơn giấy','Bấm "Đã nhận đơn" khi đơn về văn phòng','Ghi nhận')}
+  if(P.branch||(P.submit&&!P.td))add('noHard',s.noHard.length,'mt','Gửi đơn cứng về văn phòng','Sắp nghỉ (≤ 7 ngày) mà văn phòng chưa nhận đơn','Xem');
+  if(!P.manage&&!P.td&&!P.cb&&!P.tk)add('week',s.week.length,'or','Nhân viên nghỉ trong 7 ngày tới','Theo dõi để nắm tình hình nhân sự','Xem');
+  return items;
+}
+function renderHome(){
+  const s=stats(),P=BOOT.perms;
+  if(P.submit){
+    $('heroT').textContent='Có nhân viên xin nghỉ việc?';
+    $('heroP').textContent='Báo ngay khi nhận đơn: chọn nhân viên, nhập ngày nghỉ và lý do, bấm gửi. Thư ký Ban, Tuyển dụng và C&B nhận thông báo ngay trên app.';
+    $('heroBtn').textContent='+  Báo nghỉ việc';$('heroBtn').onclick=openNew;
+  }else{
+    $('heroT').textContent=s.open.length+' phiếu thôi việc đang xử lý';
+    $('heroP').textContent=s.week.length?`${s.week.length} người nghỉ trong 7 ngày tới. Bấm để xem toàn bộ danh sách.`:'Không có ai nghỉ trong 7 ngày tới.';
+    $('heroBtn').textContent='Xem danh sách phiếu';$('heroBtn').onclick=()=>{kpiFilter=null;stFilter='open';syncChips();go('list')};
+  }
+  const items=todoItems(s).filter(x=>x.n>0);
+  $('todo').innerHTML=items.length?items.map(x=>`<button class="td-i ${x.cls}" onclick="${x.k==='hd'?'openContracts()':`openList('${x.k}')`}"><div class="ic">${x.n}</div><div class="grow"><div class="t1">${x.t1}</div><div class="t2">${x.t2}</div></div><span class="go">${x.btn}</span></button>`).join('')
+    :'<div class="td-ok"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="m5 12 5 5 9-10"/></svg>Không có việc tồn đọng. Mọi phiếu đều đang đúng tiến độ.</div>';
+  const up=s.open.slice().sort((a,b)=>String(a.tv).localeCompare(String(b.tv))).slice(0,6);
+  $('upcoming').innerHTML=up.length?timeline(up,true):`<div class="empty"><b>Chưa có phiếu nào đang xử lý</b>${P.submit?'Bấm nút cam "Báo nghỉ" khi có nhân viên xin nghỉ.':'Khi quản lý chi nhánh gửi phiếu, thông tin sẽ hiện ở đây.'}</div>`;
+}
+function openHelp(){
+  const r=BOOT.user.role,P=BOOT.perms;let steps=[];
+  if(P.branch||(P.submit&&!P.td&&!P.tk&&!P.cb))steps=[
+    ['Khi nhận đơn xin nghỉ','bấm nút cam <b>Báo nghỉ</b> ở giữa thanh dưới cùng.'],
+    ['Chọn nhân viên','danh sách chi nhánh đã có sẵn, chỉ cần bấm vào tên.'],
+    ['Điền ngày nghỉ, lý do, đánh giá','bấm <b>Gửi</b>. Thư ký Ban, Tuyển dụng và C&B nhận thông báo ngay trên app.'],
+    ['Gửi đơn cứng về Thư ký Ban','Thư ký Ban bàn giao tiếp cho Tuyển dụng, rồi C&B.'],
+    ['Nếu đơn bị trả về','chuông 🔔 báo kèm lý do. Sửa đơn, gửi bản giấy về <b>Thư ký Ban</b> rồi bấm <b>Đã sửa, gửi lại đơn</b>.'],
+    ['Từ ngày nhân viên nghỉ','mở <b>Trang chủ</b> → <b>Xác nhận nhân viên đã nghỉ</b>. Nếu nhân viên đổi ý, bấm <b>Rút đơn</b>; đổi ngày thì bấm <b>Đổi ngày</b>.']];
+  else if(P.tk&&!P.td&&!P.cb)steps=[
+    ['Bạn là bước 1','mỗi phiếu mới đi qua Thư ký Ban trước, rồi đến Tuyển dụng và C&B.'],
+    ['Khi có phiếu mới','chuông 🔔 góc trên báo cho bạn. Trang chủ hiện mục <b>Bước 1 – Nhận đơn giấy, chuyển Tuyển dụng</b>; bấm khi đơn giấy đã về tới bạn.'],
+    ['Khi cầm đơn giấy trong tay','bấm <b>Đã nhận đơn giấy – chuyển Tuyển dụng</b>, chọn ngày nhận, rồi chuyển đơn cho Tuyển dụng. Chưa có giấy thì chưa bấm. Nghỉ ngang không có đơn: bấm <b>Xác nhận nghỉ ngang</b>.'],
+    ['Đơn viết sai, thiếu chữ ký…','bấm <b>Trả đơn</b>, chọn lý do. Chi nhánh nhận thông báo và gửi lại.'],
+    ['Mọi đơn giấy đều qua bạn','kể cả đơn đã sửa: khi nhận, bấm <b>Đã nhận đơn sửa – bàn giao</b> để chuyển đúng bộ phận đã trả.']];
+  else if(P.td)steps=[
+    ['Thứ tự xử lý','Thư ký Ban (bước 1) → Tuyển dụng (bước 2) → C&B (bước 3). Chuông 🔔 báo ngay khi có phiếu để chuẩn bị tuyển sớm.'],
+    ['Khi Thư ký Ban chuyển đơn sang','trang chủ hiện mục <b>Bước 2 – Nhận đơn, chuyển C&B</b>.'],
+    ['Nhận được đơn giấy','bấm <b>Đã nhận đơn – chuyển C&B</b>, ghi kế hoạch tuyển (nếu có), rồi chuyển đơn giấy cho C&B.'],
+    ['Đơn có sai sót','bấm <b>Trả đơn</b>, chọn lý do – chi nhánh nhận thông báo để sửa.'],
+    ['Theo dõi Lịch nghỉ','để biết ngày nào chi nhánh nào thiếu người.'],
+    ['Nhân viên đã xác nhận nghỉ nhưng quay lại làm','mở phiếu, bấm <b>Hủy xác nhận đã nghỉ</b> – app tự gỡ khỏi file tổng.'],
+    ['Quản trị','thêm/đổi người dùng, email nhận mail tổng hợp và báo cáo tháng ở sheet NGUOI_DUNG.']];
+  else if(P.cb)steps=[
+    ['Thứ tự xử lý','Thư ký Ban → Tuyển dụng → C&B. Bạn là bước 3.'],
+    ['Khi Tuyển dụng chuyển đơn sang','bấm <b>Đã nhận đơn – xử lý BH xong</b> sau khi xử lý bảo hiểm, chốt công.'],
+    ['Đơn sai, thiếu','bấm <b>Trả đơn</b> và chọn lý do – chi nhánh nhận thông báo để sửa.']];
+  else steps=[['Trang chủ','cho biết số phiếu đang xử lý và người sắp nghỉ.'],['Lịch nghỉ','xem theo ngày, theo tháng.'],['Ngày 5 hằng tháng','bạn nhận email báo cáo thôi việc tháng trước.']];
+  steps.push(['Chuông 🔔 góc trên','số đỏ là số việc đang chờ bạn – làm xong tự tắt, không cần đọc. Tin cập nhật nằm bên dưới.']);
+  $('modalBox').innerHTML=`<div class="grab"></div><div class="help"><h3>Cách sử dụng</h3><div class="muted" style="font-size:13.5px">Dành cho ${esc(r)}</div><ol>${steps.map(([a,b])=>`<li><b>${a}</b>: ${b}</li>`).join('')}</ol>
+    <div class="muted" style="font-size:13px;line-height:1.7">Trên phiếu: <span class="bd ut-Cao">Tuyển: Cao</span> <span class="bd ut-TB">Tuyển: Trung bình</span> theo vị trí (tăng 1 bậc khi còn ≤ 7 ngày hoặc chi nhánh báo động đỏ) · <span class="bd don-gap">Thiếu đơn – gấp</span> sắp nghỉ mà chưa có đơn giấy.</div></div>
+    <div class="acts"><button class="btn or" onclick="closeModal()">Đã hiểu</button></div>`;
+  $('modal').classList.remove('hide');
+}
+function timeline(list,withToday){
+  const t=todayIso();let html='<div class="tl">',drew=false,last='';
+  list.forEach(p=>{
+    if(withToday&&!drew&&p.tv>=t){html+='<div class="today-line">Hôm nay '+dm(t)+'</div>';drew=true}
+    const same=p.tv===last;last=p.tv;
+    const cls=p.conLai<0&&isOpen(p)?'over':'';
+    html+=`<div class="d">${same?'':`<b>${dm(p.tv)}</b><small>${wd(p.tv)}</small>`}</div>
+      <button class="ev ${cls}" onclick="showTicket('${p.maPhieu}')"><div class="av m">${esc(initials(p.ten))}</div>
+      <div class="grow"><div class="n">${esc(p.ten)}</div><div class="s">${esc(p.cn)} – ${esc(p.cv)}</div></div>
+      <span class="bd ${ST_CLS[p.trangThai]||'b-cancel'}">${esc(p.trangThai)}</span></button>`;
+  });
+  if(withToday&&!drew)html+='<div class="today-line">Hôm nay '+dm(t)+'</div>';
+  return html+'</div>';
+}
+
+/* ---------- lịch ---------- */
+function renderCal(){
+  if(!calM){const n=new Date();calM=new Date(n.getFullYear(),n.getMonth(),1)}
+  const y=calM.getFullYear(),m=calM.getMonth(),t=todayIso();
+  $('calTitle').textContent='Tháng '+(m+1)+' / '+y;
+  const by={};TICKETS.filter(p=>p.trangThai!=='Rút đơn'&&p.tv).forEach(p=>(by[p.tv]=by[p.tv]||[]).push(p));
+  const startW=(new Date(y,m,1).getDay()+6)%7;
+  let h=['T2','T3','T4','T5','T6','T7','CN'].map(d=>`<div class="w">${d}</div>`).join('');
+  for(let i=0;i<42;i++){
+    const d=new Date(y,m,1-startW+i),s=isoOf(d),n=(by[s]||[]).length;
+    if(i>=35&&d.getMonth()!==m)break;
+    h+=`<button class="${d.getMonth()!==m?'out ':''}${n?'has ':''}${s===t?'today ':''}${s===calSel?'sel':''}" onclick="calPick('${s}')">${d.getDate()}${n?`<i>${n}</i>`:''}</button>`;
+  }
+  $('calGrid').innerHTML=h;
+  const mk=y+'-'+pad(m+1),inM=TICKETS.filter(p=>p.trangThai!=='Rút đơn'&&p.tv&&p.tv.slice(0,7)===mk);
+  $('cMonth').textContent=inM.length;$('cOpen').textContent=inM.filter(isOpen).length;
+  if(calSel&&calSel.slice(0,7)===mk){
+    const list=by[calSel]||[];
+    $('calDayTitle').textContent=wd(calSel)+', '+dmy(calSel);
+    $('calDay').innerHTML=list.length?dayGroups(list,calSel):'<div class="empty">Không có nhân viên nghỉ từ ngày này.</div>';
+  }else{
+    $('calDayTitle').textContent='Trong tháng '+(m+1)+' – bấm vào ngày để xem danh sách';
+    const sorted=inM.sort((a,b)=>a.tv.localeCompare(b.tv)),next=(sorted.find(p=>p.tv>=t)||{}).tv;
+    $('calDay').innerHTML=inM.length?dayGroups(sorted,next):'<div class="empty">Chưa có ai nghỉ việc trong tháng này.</div>';
+  }
+}
+function dayGroups(list,openDate){
+  const g={};list.forEach(p=>(g[p.tv]=g[p.tv]||[]).push(p));
+  return Object.keys(g).sort().map(d=>{
+    const ps=g[d],op=ps.filter(isOpen).length,cns=[...new Set(ps.map(p=>p.cn))];
+    return `<details class="dg"${d===openDate?' open':''}><summary><div class="dd"><b>${dm(d)}</b><small>${wd(d)}</small></div>
+      <div class="grow"><div class="c1">${ps.length} người nghỉ${op?` – <span style="color:var(--orange-d)">${op} đang xử lý</span>`:''}</div><div class="c2">${esc(cns.join(', '))}</div></div>
+      <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6A7A88" stroke-width="2.4"><path d="m6 9 6 6 6-6"/></svg></summary>
+      <div class="body">${timeline(ps,false)}</div></details>`;
+  }).join('');
+}
+function calMove(k){calM=new Date(calM.getFullYear(),calM.getMonth()+k,1);calSel=null;renderCal()}
+function calPick(s){calSel=calSel===s?null:s;const[y,m]=s.split('-').map(Number);calM=new Date(y,m-1,1);renderCal()}
+
+/* ---------- danh sách ---------- */
+const RET='Trả về chi nhánh',RES='Chờ Thư ký Ban nhận đơn sửa';
+const blocked=p=>p.trangThai===RET||p.trangThai===RES;
+const retWho=p=>{const m=String(p.traDon||'').match(/– (.+?) \(([^)]+)\):/);return m?{name:m[1],role:m[2]}:{name:'',role:''}};
+const KPI={ret:['Đơn bị trả về',p=>p.trangThai===RET],overdue:['Đến ngày nghỉ, chưa xác nhận',p=>p.conLai<=0],noTK:['Thư ký Ban chưa tiếp nhận',p=>!p.tk&&!blocked(p)],resent:['Đơn sửa chờ bàn giao',p=>p.trangThai===RES],noCB:['C&B chưa xử lý',p=>!!p.td&&!p.cb&&!blocked(p)],noHardAll:['Chưa nhận đơn cứng',p=>!p.donCung&&(!!p.tk||!BOOT.hasTK)],noHard:['Thiếu đơn cứng',p=>!p.donCung&&p.conLai<=7],noTD:['Tuyển dụng chưa tiếp nhận',p=>(!!p.tk||!BOOT.hasTK)&&!p.td&&!blocked(p)],
+  week:['Nghỉ trong 7 ngày',p=>p.conLai>=0&&p.conLai<=7],month:['Nghỉ trong tháng',p=>p.trangThai!=='Rút đơn'&&p.tv&&p.tv.slice(0,7)===todayIso().slice(0,7)]};
+function openList(k){kpiFilter=k;stFilter=k==='month'?'all':'open';syncChips();go('list')}
+function clearKpi(){kpiFilter=null;syncChips();renderList()}
+function setSt(b){stFilter=b.dataset.st;kpiFilter=null;syncChips();renderList()}
+function syncChips(){document.querySelectorAll('#stChips .chip[data-st]').forEach(c=>c.classList.toggle('on',c.dataset.st===stFilter));
+  const k=$('kpiChip');if(kpiFilter){k.textContent=KPI[kpiFilter][0]+'  ✕';k.classList.remove('hide')}else k.classList.add('hide')}
+function renderList(){
+  const cn=$('fCN').value,q=norm($('fQ').value.trim());
+  let rows=TICKETS.filter(p=>(!cn||p.cn===cn)&&(!q||norm(p.ten+' '+p.maNV+' '+p.maPhieu).includes(q)));
+  if(stFilter==='open')rows=rows.filter(isOpen);else if(stFilter==='closed')rows=rows.filter(p=>!isOpen(p));
+  if(kpiFilter)rows=rows.filter(KPI[kpiFilter][1]);
+  $('listSub').textContent=rows.length+' phiếu';
+  $('tkList').innerHTML=rows.length?rows.map(card).join(''):'<div class="empty"><b>Không có phiếu phù hợp</b>Thử bỏ bộ lọc hoặc tìm với từ khóa khác.</div>';
+}
+function card(p){
+  const open=isOpen(p),P=BOOT.perms;
+  const left=p.conLai==null?'':(p.conLai<0?`quá ${-p.conLai} ngày`:(p.conLai===0?'hôm nay':`còn ${p.conLai} ngày`));
+  const a=[];
+  const ret=p.trangThai===RET,res=p.trangThai===RES;
+  if(open&&res&&P.tk){const w=retWho(p);a.push(`<button class="btn sm or" onclick="act('${p.maPhieu}','bangiao')">Đã nhận đơn sửa – bàn giao ${esc(w.role||'bộ phận')}</button>`)}
+  if(open&&ret&&P.manage)a.push(`<button class="btn sm or" onclick="act('${p.maPhieu}','guilai')">Đã sửa, gửi lại đơn</button>`);
+  if(open&&!ret&&!res){
+    if(P.tk&&!p.tk)a.push(`<button class="btn sm" onclick="act('${p.maPhieu}','tk')">${isNN(p)?'Xác nhận nghỉ ngang – chuyển Tuyển dụng':'Đã nhận đơn giấy – chuyển Tuyển dụng'}</button>`);
+    if(P.td&&!p.td&&(p.tk||!BOOT.hasTK))a.push(`<button class="btn sm" onclick="act('${p.maPhieu}','td')">Đã nhận đơn – chuyển C&amp;B</button>`);
+    if(P.cb&&!p.cb&&p.td)a.push(`<button class="btn sm" onclick="act('${p.maPhieu}','cb')">Đã nhận đơn – xử lý BH xong</button>`);
+    if(!p.donCung&&((P.tk&&p.tk)||(P.cb&&!BOOT.hasTK)))a.push(`<button class="btn sm ln" onclick="act('${p.maPhieu}','doncung')">Đã nhận đơn giấy</button>`);
+    if(P.tk||P.td||P.cb)a.push(`<button class="btn sm rd" onclick="act('${p.maPhieu}','tradon')">Trả đơn</button>`);
+  }
+  if(open&&P.manage){
+    if(p.conLai!=null&&p.conLai<=0)a.push(`<button class="btn sm gr" onclick="act('${p.maPhieu}','hoantat')">Xác nhận đã nghỉ</button>`);
+    a.push(`<button class="btn sm ln" onclick="act('${p.maPhieu}','doingay')">Đổi ngày</button>`);
+    a.push(`<button class="btn sm rd" onclick="act('${p.maPhieu}','rutdon')">Rút đơn</button>`);
+  }
+  if(p.trangThai==='Hoàn tất'&&!p.donCung&&(P.tk||(P.cb&&!BOOT.hasTK)))a.push(`<button class="btn sm ln" onclick="act('${p.maPhieu}','doncung')">Đã nhận đơn giấy</button>`);
+  if(p.trangThai==='Hoàn tất'&&P.td)a.push(`<button class="btn sm rd" onclick="act('${p.maPhieu}','huyht')">Hủy xác nhận đã nghỉ</button>`);
+  if(P.td||P.cb)a.push(`<button class="btn sm ln" onclick="act('${p.maPhieu}','ghichu')">Ghi chú</button>`);
+  const ut=p.utTuyen||'',utK={'Cao':'Cao','Trung bình':'TB','Thấp':'Thấp','Không tuyển':'Không'}[ut]||'Không';
+  const donB=p.utDon&&p.utDon!=='Đủ đơn'&&!/^Nghỉ ngang/.test(p.utDon)&&(open||p.trangThai==='Hoàn tất')?`<span class="bd ${/gấp/.test(p.utDon)?'don-gap':'don-cho'}">${esc(p.utDon)}</span>`:'';
+  return `<div class="tk ${open?(ut==='Cao'?'p-Khẩn':ut==='Trung bình'?'p-Cao':''):'closed'}" id="tk-${p.maPhieu}">
+    <div class="tk-h"><div class="av">${esc(initials(p.ten))}</div>
+      <div class="grow"><div class="tk-n">${esc(p.ten)}</div><div class="tk-s">${esc(p.cn)} – ${esc(p.cv)}</div></div>
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end"><span class="bd ${ST_CLS[p.trangThai]||'b-cancel'}">${esc(p.trangThai)}</span>${open&&ut?`<span class="bd ut-${utK}">${ut==='Không tuyển'?'Không tuyển thay':'Tuyển: '+esc(ut)}</span>`:''}${donB}</div></div>
+    <div class="tk-row">
+      <div><span>Nghỉ từ</span><b>${dmy(p.tv)}</b>${open?`<br><small class="muted">${left}</small>`:''}</div>
+      <div><span>Nộp đơn</span>${dmy(p.nop)||'Không có'}</div>
+      <div><span>Tuyển thay</span>${esc(p.tuyenThay)||'—'}</div>
+    </div>
+    <div class="tk-reason"><b>${esc(p.maLD)}</b> ${esc(p.ctLD)}${p.dienGiai?`<div class="muted" style="font-size:13px">${esc(p.dienGiai)}</div>`:''}</div>
+    <div class="flow">${BOOT.hasTK?`<span class="step ${p.tk?'ok':''}" title="${esc(p.tk)}">${p.tk?'✓':'1'} Thư ký Ban</span><span class="arr">›</span>`:''}<span class="step ${p.td?'ok':''}" title="${esc(p.td)}">${p.td?'✓':'2'} Tuyển dụng</span><span class="arr">›</span><span class="step ${p.cb?'ok':''}" title="${esc(p.cb)}">${p.cb?'✓':'3'} C&amp;B</span><span class="step ${p.donCung?'ok':''}" style="margin-left:6px">${p.donCung?'✓ Đơn cứng '+dm(p.donCung):'○ Đơn cứng'}</span></div>
+    ${(ret||res)?`<div class="ret"><b>Đơn bị trả về${p.soLanTra>1?' (lần '+p.soLanTra+')':''}:</b> ${esc(p.traDon)}</div>`:''}
+    ${nextStep(p)}
+    ${p.ghiChu?`<div class="hint">Ghi chú: ${esc(p.ghiChu)}</div>`:''}
+    <div class="tk-foot">${esc(p.maPhieu)} – gửi bởi ${esc(p.nguoiGui)}, ${esc(p.thoiDiem)}</div>
+    ${a.length?`<div class="tk-acts">${a.join('')}</div>`:''}
+  </div>`;
+}
+function nextStep(p){
+  if(p.trangThai===RES){const w=retWho(p);return '<div class="next"><b>Đang chờ:</b> Thư ký Ban nhận đơn đã sửa và bàn giao cho <b>'+esc(w.name||'bộ phận đã trả đơn')+'</b>'+(w.role?' ('+esc(w.role)+')':'')+'.</div>'}
+  if(p.trangThai===RET)return '<div class="next"><b>Đang chờ:</b> quản lý chi nhánh sửa đơn, gửi bản giấy về <b>Thư ký Ban</b> và bấm "Đã sửa, gửi lại đơn".</div>';
+  if(p.trangThai==='Hoàn tất')return '<div class="next done">Đã hoàn tất – nhân viên đã chuyển vào danh sách thôi việc.</div>';
+  if(p.trangThai==='Rút đơn')return '<div class="next done">Nhân viên đã rút đơn, tiếp tục làm việc.</div>';
+  const w=[];
+  const back=/Gửi lại đơn/.test(p.ghiChu||'')&&p.traDon?(p.traDon.match(/– (.+?) \(([^)]+)\):/)||[]):[];
+  const pend={'Thư ký Ban':!p.tk,'Thư ký BKD':!p.tk,'Tuyển dụng':!p.td,'C&B':!p.cb}[back[2]];
+  if(back[1]&&pend)w.push('<b>'+esc(back[1])+'</b> nhận lại đơn đã sửa');
+  if(!p.tk&&BOOT.hasTK)w.push('Thư ký Ban nhận đơn giấy (bước 1)');else if(!p.td)w.push('Tuyển dụng tiếp nhận (bước 2)');else if(!p.cb)w.push('C&B xử lý bảo hiểm (bước 3)');
+  if(!p.donCung)w.push('văn phòng nhận đơn cứng');
+  if(p.conLai!=null&&p.conLai<=0)w.push('quản lý xác nhận đã nghỉ');
+  return w.length?'<div class="next"><b>Đang chờ:</b> '+w.join(', ')+'.</div>':'<div class="next">Đủ hồ sơ – chờ đến ngày nghỉ '+dmy(p.tv)+' để xác nhận.</div>';
+}
+function upsert(t){if(!t)return;const i=TICKETS.findIndex(x=>x.maPhieu===t.maPhieu);if(i>=0)TICKETS[i]=t;else TICKETS.unshift(t);renderPage()}
+function showTicket(ma){
+  const p=TICKETS.find(x=>x.maPhieu===ma);if(!p)return;
+  $('modalBox').innerHTML='<div class="grab"></div>'+card(p).replace('class="tk','class="tk" style="margin-top:0;box-shadow:none;background:transparent;padding:4px 0" data-x="');
+  $('modal').classList.remove('hide');
+}
+
+/* ---------- báo thôi việc ---------- */
+function openNew(){if(!BOOT.perms.submit)return;unpick();$('q').value='';go('new');loadStaff()}
+function newBack(){if(PICK)unpick();else go('home')}
+async function loadStaff(){
+  $('staffList').innerHTML='<div class="empty">Đang tải danh sách nhân viên…</div>';
+  try{STAFF=await call('getStaff',TOKEN,$('cnSel').value);renderStaff()}catch(e){$('staffList').innerHTML=`<div class="empty">${esc(e.message)}</div>`}
+}
+function renderStaff(){
+  const q=norm($('q').value.trim()),list=STAFF.filter(s=>!q||norm(s.ten+' '+s.ma).includes(q));
+  $('staffHint').textContent=`${list.length} trên ${STAFF.length} nhân viên đang làm. Nhân viên đã có phiếu đang xử lý không hiện ở đây.`;
+  $('staffList').innerHTML=list.length?list.map(s=>`<button class="item" onclick="pick('${s.ma}')"><div class="av m">${esc(initials(s.ten))}</div><div class="grow"><div style="font-weight:600">${esc(s.ten)}</div><div class="s">${esc(s.cv)}${s.vao?', vào làm '+dmy(s.vao):''}</div></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9AA8B4" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg></button>`).join(''):'<div class="empty">Không tìm thấy nhân viên phù hợp.</div>';
+}
+function pick(ma){
+  PICK=STAFF.find(s=>s.ma===ma);if(!PICK)return;resetForm();
+  $('pAv').textContent=initials(PICK.ten);$('pName').textContent=PICK.ten;
+  $('pMeta').textContent=PICK.ma+' – '+PICK.cv+(PICK.vao?', vào làm '+dmy(PICK.vao):'');
+  $('pLoai').textContent=PICK.loaiNV||'Chưa xác định loại nhân viên';$('pLoai').className='t'+(PICK.loaiNV?'':' none');
+  $('pickStep').classList.add('hide');$('formStep').classList.remove('hide');$('newTitle').textContent='Thông tin thôi việc';window.scrollTo(0,0);
+}
+function unpick(){PICK=null;$('formStep').classList.add('hide');$('pickStep').classList.remove('hide');$('newTitle').textContent='Chọn nhân viên'}
+function bindSegs(){document.querySelectorAll('.seg').forEach(seg=>seg.querySelectorAll('button').forEach(b=>b.onclick=()=>{seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');SEG[seg.dataset.f]=b.textContent.trim()}))}
+function resetForm(){
+  SEG={};cuoiTouched=false;document.querySelectorAll('#formStep .seg button').forEach(b=>b.classList.remove('on'));
+  ['fLoaiTV','fLD'].forEach(id=>$(id).value='');$('fNop').value=todayIso();['fTV','fCuoi','fDG','fNX','fSom'].forEach(id=>$(id).value='');$('duyetBox').classList.add('hide');
+  $('ldHint').textContent='';['noticeMsg','formErr'].forEach(id=>$(id).classList.add('hide'));onLoaiTV();
+}
+function onLoaiTV(){const nn=$('fLoaiTV').value.indexOf('NN')===0;$('nopReq').classList.toggle('hide',nn);$('nopOpt').classList.toggle('hide',!nn);checkNotice()}
+function onTV(){if($('fTV').value&&!cuoiTouched)$('fCuoi').value=addDays($('fTV').value,-1);checkNotice()}
+function onLD(){const r=BOOT.reasons.find(x=>x.code===$('fLD').value);$('ldHint').textContent=r?'Thường gặp: '+r.hint:'';
+  if(r&&r.code==='F3'&&!$('fLoaiTV').value){const h=BOOT.loaiTV.find(l=>l.code==='HH');if(h){$('fLoaiTV').value=h.label;onLoaiTV()}}}
+function checkNotice(){
+  const el=$('noticeMsg'),nop=$('fNop').value,tv=$('fTV').value,lnv=PICK?PICK.loaiNV:'',m=[];
+  if(tv){const l=diff(todayIso(),tv);if(l<0)m.push(`Ngày thôi việc đã qua ${-l} ngày.`);else if(l<=7)m.push(`Còn ${l} ngày đến ngày nghỉ.`)}
+  let short=false;
+  if(nop&&tv){const n=diff(nop,tv);if(n<0)m.push('Ngày thôi việc đang trước ngày nộp đơn.');else if(lnv&&BOOT.quyDinh[lnv]!==undefined&&n<BOOT.quyDinh[lnv]){short=true;m.push(`Báo trước ${n} ngày, ít hơn quy định ${BOOT.quyDinh[lnv]} ngày (${lnv}) – chỉ là cảnh báo. Nếu quản lý đồng ý cho nghỉ sớm, chọn "Có" bên dưới.`)}}
+  el.innerHTML=m.map(esc).join('<br>');el.classList.toggle('hide',!m.length);$('duyetBox').classList.toggle('hide',!short);
+}
+async function send(){
+  const f={maNV:PICK&&PICK.ma,loaiTV:$('fLoaiTV').value,nop:$('fNop').value,tv:$('fTV').value,cuoi:$('fCuoi').value,maLD:$('fLD').value,dienGiai:$('fDG').value.trim(),nhanXet:$('fNX').value.trim(),tuyenThay:SEG.tuyenThay,taiTuyen:SEG.taiTuyen,kyLuat:SEG.kyLuat,duyetSom:$('duyetBox').classList.contains('hide')?'':(SEG.duyetSom||''),lyDoSom:$('fSom').value.trim()};
+  QUALS.forEach(([k])=>f[k]=SEG[k]);
+  const miss=[];if(!f.loaiTV)miss.push('loại thôi việc');if(!f.tv)miss.push('ngày thôi việc');if(f.loaiTV.indexOf('NN')!==0&&!f.nop)miss.push('ngày nộp đơn');
+  if(!f.tuyenThay)miss.push('cần tuyển thay');if(!f.maLD)miss.push('lý do');if(f.dienGiai.length<5)miss.push('diễn giải');
+  if(QUALS.some(([k])=>!f[k]))miss.push('đánh giá phẩm chất');if(!f.kyLuat)miss.push('kỷ luật');if(!f.taiTuyen)miss.push('tái tuyển');
+  const e=$('formErr');if(miss.length){e.textContent='Còn thiếu: '+miss.join(', ')+'.';e.classList.remove('hide');e.scrollIntoView({behavior:'smooth',block:'center'});return}
+  e.classList.add('hide');
+  confirmSheet('Gửi thông tin thôi việc?',`${PICK.ten} nghỉ từ ngày ${dmy(f.tv)}. Thư ký Ban, Tuyển dụng, C&B và quản lý liên quan sẽ nhận thông báo trên app.`,'Gửi',async()=>{
+    busy(true);$('btnSend').disabled=true;
+    try{const r=await call('submit',TOKEN,f);let m=`Đã gửi phiếu ${r.maPhieu}.`;m+=sentMsg(r.mail);
+      toast(m,r.mail&&!r.mail.ok);upsert(r.ticket);go('home');pollNoti()}
+    catch(err){e.textContent=err.message;e.classList.remove('hide')}
+    finally{busy(false);$('btnSend').disabled=false}
+  });
+}
+
+/* ---------- hành động & sheet ---------- */
+const ACT={
+  tradon:{t:'Trả đơn về chi nhánh',reasons:true,note:'Ghi chú cho chi nhánh (cần sửa gì)',btn:'Trả đơn',warn:true},
+  guilai:{t:'Đã sửa và gửi lại đơn',msg:'Gửi đơn giấy đã sửa về <b>Thư ký Ban</b>. Thư ký Ban sẽ nhận và bàn giao cho bộ phận đã trả đơn.',note:'Đã sửa gì? *',btn:'Gửi lại'},
+  bangiao:{t:'Nhận đơn đã sửa và bàn giao',msg:'Xác nhận đã nhận đơn giấy đã sửa từ chi nhánh. Bộ phận đã trả đơn sẽ nhận thông báo để nhận lại.',date:'Ngày nhận đơn sửa',note:'Ghi chú (không bắt buộc)',btn:'Bàn giao'},
+  tk:{t:'Bước 1 – Thư ký Ban nhận đơn giấy',msg:'Chỉ bấm khi <b>đã cầm đơn giấy</b>. Phiếu chuyển sang Tuyển dụng (bước 2), Tuyển dụng nhận thông báo. Chưa có giấy thì chưa bấm – thông tin đã tự báo Tuyển dụng, C&B từ lúc chi nhánh gửi.',date:'Ngày nhận đơn giấy *',note:'Ghi chú (không bắt buộc)',btn:'Chuyển Tuyển dụng'},
+  tkNN:{t:'Bước 1 – Xác nhận nghỉ ngang',msg:'Nhân viên <b>nghỉ ngang</b> nên không có đơn giấy. Thư ký Ban xác nhận thông tin để chuyển Tuyển dụng (bước 2).',date:'Ngày nhận đơn giấy (nếu có)',note:'Ghi chú (không bắt buộc)',btn:'Chuyển Tuyển dụng'},
+  huyht:{t:'Hủy xác nhận đã nghỉ',msg:'Nhân viên sẽ được <b>gỡ khỏi danh sách thôi việc</b> của file tổng 5.DSach và trở lại là đang làm. Các bên nhận thông báo.',choice:[['rut','NV quay lại làm → Rút đơn'],['mo','Bấm nhầm → Mở lại phiếu']],note:'Lý do *',btn:'Hủy xác nhận',warn:true},
+  td:{t:'Bước 2 – Tuyển dụng nhận đơn',msg:'Xác nhận Tuyển dụng đã nhận đơn và thông tin. Phiếu chuyển sang C&B (bước 3), C&B nhận thông báo.',note:'Kế hoạch tuyển thay (không bắt buộc)',btn:'Chuyển C&B'},
+  cb:{t:'Bước 3 – C&B nhận đơn',msg:'Xác nhận C&B đã nhận đơn, xử lý bảo hiểm và chốt công. Phiếu đủ hồ sơ, chờ đến ngày nghỉ.',note:'Ghi chú (không bắt buộc)',btn:'Hoàn tất bước 3'},
+  doncung:{t:'Thư ký Ban đã nhận đơn giấy',date:'Ngày nhận đơn cứng',btn:'Lưu'},
+  doingay:{t:'Đổi ngày thôi việc',date:'Ngày thôi việc mới',note:'Lý do đổi ngày *',btn:'Đổi ngày và báo mọi bên'},
+  rutdon:{t:'Nhân viên rút đơn',msg:'Phiếu đóng, nhân viên tiếp tục làm việc và được tính là <b>giữ chân được</b> trong báo cáo tháng. Bộ phận đang giữ đơn giấy hủy hoặc trả lại đơn.',note:'Lý do rút đơn *',btn:'Rút đơn',warn:true},
+  hoantat:{t:'Xác nhận đã nghỉ việc',msg:'Phiếu sẽ đóng và nhân viên được chuyển vào danh sách thôi việc của file tổng.',btn:'Xác nhận đã nghỉ'},
+  ghichu:{t:'Thêm ghi chú nhân sự',note:'Nội dung *',btn:'Lưu ghi chú'}
 };
-setTimeout(showCards, 1200);
+function act(ma,a){
+  const p=TICKETS.find(x=>x.maPhieu===ma),c=ACT[a==='tk'&&isNN(p)?'tkNN':a];
+  $('modalBox').innerHTML=`<div class="grab"></div><h3>${c.t}</h3><div class="muted" style="font-size:13.5px;margin-bottom:12px">${esc(p.ten)}, ${esc(p.cn)} – nghỉ từ ${dmy(p.tv)}</div>
+    ${c.msg?`<div class="alert warn" style="margin-top:0">${c.msg}</div>`:''}
+    ${a==='hoantat'&&!p.donCung?'<div class="alert err">Văn phòng <b>chưa nhận đơn cứng</b>. Vẫn xác nhận được; phiếu sẽ nằm trong mail nhắc hằng ngày <b>"Đã nghỉ nhưng chưa nhận đơn cứng"</b> cho đến khi văn phòng bấm Đã nhận đơn.</div>':''}
+    ${c.choice?`<label style="margin-top:12px">Cách xử lý *</label><select id="mChoice"><option value="">Chọn</option>${c.choice.map(([v,t])=>`<option value="${v}">${t}</option>`).join('')}</select>`:''}
+    ${c.reasons?`<label style="margin-top:12px">Lý do trả đơn *</label><select id="mReason"><option value="">Chọn lý do</option>${(BOOT.returnReasons||[]).map(r=>`<option>${esc(r)}</option>`).join('')}</select>`:''}
+    ${c.date?`<label style="margin-top:12px">${c.date}</label><input type="date" id="mDate" value="${a==='doingay'?p.tv:(a==='tk'&&isNN(p)?'':todayIso())}">`:''}
+    ${c.note?`<label style="margin-top:12px">${c.note}</label><textarea id="mNote"></textarea>`:''}
+    <div id="mErr" class="alert err hide"></div>
+    <div class="acts"><button class="btn ln" onclick="closeModal()">Hủy</button><button class="btn ${c.warn?'':'or'}" style="${c.warn?'background:var(--red)':''}" id="mOk">${c.btn}</button></div>`;
+  $('modal').classList.remove('hide');
+  $('mOk').onclick=async()=>{
+    const d={mode:$('mChoice')?$('mChoice').value:'',reason:$('mReason')?$('mReason').value:'',date:$('mDate')?$('mDate').value:'',tv:$('mDate')?$('mDate').value:'',note:$('mNote')?$('mNote').value.trim():''};
+    const bad=a==='tk'&&!isNN(p)&&!d.date?'Chọn ngày nhận đơn giấy.':(c.choice&&!d.mode?'Chọn cách xử lý.':'');
+    if(bad){const el=$('mErr');el.textContent=bad;el.classList.remove('hide');return}
+    $('mOk').disabled=true;busy(true);
+    try{const r=await call('action',TOKEN,ma,a,d);closeModal();upsert(r.ticket);toast('Đã lưu.'+sentMsg(r.mail),r.mail&&!r.mail.ok);pollNoti()}
+    catch(e){const el=$('mErr');el.textContent=e.message;el.classList.remove('hide');$('mOk').disabled=false}
+    finally{busy(false)}
+  };
+}
+function confirmSheet(t,msg,btn,fn){
+  $('modalBox').innerHTML=`<div class="grab"></div><h3>${esc(t)}</h3><p class="muted" style="margin:6px 0 0;font-size:14px">${esc(msg)}</p><div class="acts"><button class="btn ln" onclick="closeModal()">Xem lại</button><button class="btn or" id="mOk">${esc(btn)}</button></div>`;
+  $('modal').classList.remove('hide');$('mOk').onclick=()=>{closeModal();fn()};
+}
+function openMe(){
+  $('modalBox').innerHTML=`<div class="grab"></div><div style="display:flex;gap:14px;align-items:center"><div class="av" style="width:52px;height:52px;border-radius:16px;font-size:17px">${esc(initials(BOOT.user.name))}</div><div><h3>${esc(BOOT.user.name)}</h3><div class="muted" style="font-size:13.5px">${esc(BOOT.user.role)} – ${BOOT.user.all?'toàn hệ thống':'chi nhánh '+esc(BOOT.cns.join(', '))}</div></div></div>
+    <div class="alert" style="background:var(--mint-soft);color:var(--navy-ink)">Mã đăng nhập 4 số chỉ dùng cho riêng bạn, không chia sẻ. Quên mã hoặc đổi người phụ trách: liên hệ BP. Tuyển dụng.</div>
+    <div class="acts"><button class="btn ln" onclick="closeModal()">Đóng</button><button class="btn" onclick="doLogout()">Đăng xuất</button></div>`;
+  $('modal').classList.remove('hide');
+}
+function closeModal(){$('modal').classList.add('hide')}
+
+/* ---------- thông báo (chuông) ---------- */
+// VIEC = việc đang chờ bạn (tự tắt khi đã xử lý) · TIN = tin để biết (tắt khi đọc). Số đỏ = số việc.
+let NV=null,NOTI={todo:0,tin:0,items:[]},notiTimer=null;
+function sentMsg(m){if(!m)return'';if(!m.ok)return' Chưa gửi được thông báo: '+m.error;return m.app===true?(m.count?` Đã báo ${m.count} người trên app.`:''):` Email đã tới ${m.count} người.`}
+function setBadge(){const n=NOTI.todo||0,t=NOTI.tin||0;toShell({type:'tv-badge',n});document.querySelectorAll('.bell .dot').forEach(d=>{d.textContent=n?(n>99?'99+':n):'';d.classList.toggle('hide',!n&&!t);d.classList.toggle('mini',!n&&!!t)})}
+// Chỉ tải lại danh sách phiếu khi chuông CỦA MÌNH thay đổi (không phải mỗi lần ai đó thao tác)
+const nSig=r=>(r&&r.items||[]).map(x=>x.id+(x.done?'d':'')+(x.read?'r':'')).join(',');
+async function pollNoti(){
+  if(!TOKEN)return;
+  try{
+    const r=await call('getNotifs',TOKEN,NV);if(r.same)return;
+    const first=NV===null,prev=NOTI.todo||0,prevTin=NOTI.tin||0,sig=nSig(r),changed=sig!==nSig(NOTI);NV=r.ver;NOTI=r;setBadge();
+    if(!first&&changed){lastLoad=0;loadTickets();
+      if(r.todo>prev){const x=r.items.find(i=>i.kind==='VIEC'&&!i.done);toast(r.todo-prev===1&&x?'🔔 Việc mới: '+x.title:`🔔 Bạn có ${r.todo-prev} việc mới`)}
+      else if(r.tin>prevTin){const x=r.items.find(i=>i.kind==='TIN'&&!i.read);if(x)toast('🔔 '+x.title)}}
+    if($('nfList'))renderNoti();
+  }catch(e){}
+}
+function startNoti(init){NV=null;NOTI={todo:0,tin:0,items:[]};if(init&&init.ver!==undefined){NV=init.ver;NOTI=init;setBadge();if($('nfList'))renderNoti()}else pollNoti();clearInterval(notiTimer);notiTimer=setInterval(()=>{if(document.visibilityState==='visible')pollNoti()},60000)}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pollNoti()});
+function ago(at){const t=new Date(String(at).replace(' ','T'));if(isNaN(t))return at;const m=Math.round((Date.now()-t)/6e4);
+  if(m<1)return'vừa xong';if(m<60)return m+' phút trước';if(m<1440)return Math.round(m/60)+' giờ trước';return dm(at.slice(0,10))+' '+at.slice(11)}
+function nfIcon(x){if(x.kind==='VIEC'&&x.done)return['gr','✓'];const t=x.title;if(/trả về/i.test(t))return['red','↩'];if(x.kind==='VIEC')return['or','!'];if(/Báo thôi việc mới/.test(t))return['','+'];if(/rút đơn|Hủy xác nhận/i.test(t))return['gr','✓'];if(/Đổi ngày/.test(t))return['or','⇄'];return['','›']}
+function openNoti(){$('modalBox').innerHTML='<div class="grab"></div><div id="nfBox"></div>';$('modal').classList.remove('hide');renderNoti();pollNoti()}
+function nfRow(x){const[c,i]=nfIcon(x),un=x.kind==='VIEC'?!x.done:!x.read;
+  return`<button class="nf-i${un?' un':''}${x.kind==='VIEC'&&x.done?' dn':''}" onclick="openNotiItem('${esc(x.id)}','${esc(x.ma)}')"><div class="ic ${c}">${i}</div><div class="grow"><div class="t1">${esc(x.title)}</div><div class="t2">${esc(x.body)}</div><div class="t3">${x.kind==='VIEC'&&x.done?'Đã xử lý · ':''}${ago(x.at)} · ${esc(x.by)}</div></div>${un?'<span class="u"></span>':''}</button>`}
+function renderNoti(){
+  const box=$('nfBox');if(!box)return;const it=NOTI.items||[];
+  const todo=it.filter(x=>x.kind==='VIEC'&&!x.done),rest=it.filter(x=>!(x.kind==='VIEC'&&!x.done));
+  box.innerHTML=`<div class="nf-top"><h3>Thông báo</h3>${NOTI.tin?'<button onclick="readAll()">Đã đọc hết tin</button>':''}</div>
+  <div class="nf-list" id="nfList">
+    <div class="nf-h">Cần bạn xử lý${todo.length?` <b>${todo.length}</b>`:''}</div>
+    ${todo.length?todo.map(nfRow).join(''):'<div class="nf-ok">✓ Không có việc nào đang chờ bạn.</div>'}
+    <div class="nf-h">Tin cập nhật</div>
+    ${rest.length?rest.map(nfRow).join(''):'<div class="nf-ok" style="color:var(--muted)">Chưa có tin.</div>'}
+  </div>
+  <div class="hint" style="text-align:center;margin-top:8px">Việc tự tắt khi đã xử lý xong.</div>`;
+}
+function markLocal(id){const x=(NOTI.items||[]).find(i=>i.id===id);if(x&&!x.read){x.read=true;if(x.kind==='TIN'){NOTI.tin=Math.max(0,(NOTI.tin||0)-1);setBadge()}}}
+async function openNotiItem(id,ma){
+  markLocal(id);call('markRead',TOKEN,[id]).catch(()=>{});
+  closeModal();
+  if(/^HD:/.test(ma)){await loadContracts();return openContracts(ma.slice(3))}
+  if(!TICKETS.find(x=>x.maPhieu===ma)){busy(true);try{await loadTickets()}finally{busy(false)}}
+  if(TICKETS.find(x=>x.maPhieu===ma))showTicket(ma);else toast('Phiếu '+ma+' đã đóng hoặc không còn trong danh sách theo dõi.')
+}
+async function readAll(){(NOTI.items||[]).forEach(x=>x.read=true);NOTI.tin=0;setBadge();renderNoti();try{await call('markRead',TOKEN,'all')}catch(e){toast(e.message,true)}}
+
+/* ---------- cầu nối với app cài trên điện thoại (PWA) ---------- */
+// Chỉ nói chuyện với đúng trang PWA_ORIGIN; nếu app mở trực tiếp bằng link thì phần này không làm gì.
+let FCM=null;
+// App cài từ GitHub: pwa.js (cùng trang) xử lý thông báo đẩy. Bản cũ chạy trong khung: nhắn qua postMessage.
+function toShell(m){if(window.TV_PWA){try{TV_PWA.msg(m)}catch(e){}return}if(!PWA_ORIGIN)return;try{window.top.postMessage(m,PWA_ORIGIN)}catch(e){}}
+async function onDeviceToken(tok,device,fresh){
+  if(!tok||!TOKEN||tok===FCM)return;FCM=tok;
+  try{await call('registerPush',TOKEN,FCM,device||'');if(fresh)toast('🔔 Đã bật thông báo trên điện thoại này.')}catch(err){FCM=null}
+}
+window.addEventListener('message',e=>{
+  if(!PWA_ORIGIN||e.origin!==PWA_ORIGIN||!e.data||typeof e.data!=='object')return;
+  if(e.data.type==='tv-token'&&e.data.token)onDeviceToken(e.data.token,e.data.device,e.data.fresh);
+});
+function helloShell(){toShell({type:'tv-hello',user:BOOT&&BOOT.user?BOOT.user.name:''})}
+
+/* ---------- hợp đồng sắp hết hạn ---------- */
+let CONTRACTS=[];
+async function loadContracts(){const P=BOOT.perms;if(!(P.branch||P.manage||P.td))return;try{CONTRACTS=await call('getContracts',TOKEN)||[];if(PAGE==='home')renderHome();if($('hdList'))renderContracts()}catch(e){}}
+function openContracts(focus){$('modalBox').innerHTML='<div class="grab"></div><h3>Hợp đồng sắp hết hạn</h3><div class="muted" style="font-size:13px;margin-bottom:10px">Gia hạn: nhập ngày hết hạn mới. Không gia hạn: báo nghỉ (loại HH, lý do F3) – app điền sẵn.</div><div id="hdList" class="nf-list"></div>';$('modal').classList.remove('hide');renderContracts(focus)}
+function renderContracts(focus){
+  const box=$('hdList');if(!box)return;const P=BOOT.perms;
+  box.innerHTML=CONTRACTS.length?CONTRACTS.map(c=>`<div class="tk" style="margin:0 0 10px;padding:12px 14px${c.ma===focus?';box-shadow:0 0 0 2px var(--orange)':''}">
+    <div class="tk-h"><div class="av">${esc(initials(c.ten))}</div><div class="grow"><div class="tk-n">${esc(c.ten)}</div><div class="tk-s">${esc(c.cn)} – ${esc(c.cv)}${c.loaiNV?' · '+esc(c.loaiNV):''}</div></div>
+    <span class="bd ${c.con<=7?'ut-Cao':'ut-TB'}">${c.con<0?'Quá '+(-c.con)+' ngày':'Còn '+c.con+' ngày'}</span></div>
+    <div class="hint" style="margin-top:6px">Hết hạn HĐ: <b>${dmy(c.het)}</b></div>
+    <div class="tk-acts" id="hda-${c.ma}"><button class="btn sm" onclick="hdExtend('${c.ma}','${c.het}')">Gia hạn</button>${P.submit?`<button class="btn sm rd" onclick="hdStop('${c.ma}','${esc(c.cn)}','${c.het}')">Không gia hạn – báo nghỉ</button>`:''}</div></div>`).join('')
+    :'<div class="nf-ok">✓ Không có hợp đồng nào sắp hết hạn.</div>';
+}
+function hdExtend(ma,het){const d=addDays(het<todayIso()?todayIso():het,365);$('hda-'+ma).innerHTML=`<label style="width:100%;margin:0">Ngày hết hạn mới</label><input type="date" id="hdd-${ma}" value="${d}" style="flex:1"><button class="btn sm or" onclick="hdSave('${ma}')">Lưu</button>`}
+async function hdSave(ma){const v=$('hdd-'+ma).value;if(!v)return;busy(true);try{await call('extendContract',TOKEN,ma,v);toast('Đã gia hạn hợp đồng đến '+dmy(v)+'.');await loadContracts();pollNoti()}catch(e){toast(e.message,true)}finally{busy(false)}}
+async function hdStop(ma,cn,het){
+  closeModal();if(!BOOT.perms.submit)return;
+  if(BOOT.cns.length>1)$('cnSel').value=cn;
+  unpick();$('q').value='';go('new');await loadStaff();
+  if(!STAFF.find(s=>s.ma===ma))return toast('Nhân viên đã có phiếu đang xử lý hoặc không còn trong danh sách.',true);
+  pick(ma);
+  const hh=BOOT.loaiTV.find(l=>l.code==='HH');if(hh){$('fLoaiTV').value=hh.label;onLoaiTV()}
+  $('fTV').value=addDays(het,1);onTV();$('fLD').value='F3';onLD();$('fDG').value='Hết hạn hợp đồng ngày '+dmy(het)+', không gia hạn.';
+  toast('Đã điền sẵn: loại HH, lý do F3, nghỉ từ '+dmy(addDays(het,1))+'. Kiểm tra lại rồi gửi.');
+}
+
+/* ---------- khởi động ---------- */
+(async()=>{TOKEN=store.get();if(!TOKEN)return toLogin();const last=LC.get();
+  if(last&&last.boot){try{apply(last,true)}catch(e){LC.set(null)}}else busy(true,'Đang mở…');
+  try{await start()}catch(e){if(TOKEN&&last&&last.boot)toast('Chưa tải được dữ liệu mới, đang hiện dữ liệu lần trước. Kéo lại sau.',true);else if(TOKEN)toLogin()}finally{busy(false)}})();
 </script>
+<script src="pwa.js"></script>
 </body>
 </html>

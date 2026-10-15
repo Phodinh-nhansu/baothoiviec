@@ -1,8 +1,26 @@
-// Service worker: nhận thông báo đẩy (Firebase Cloud Messaging) + số đỏ trên biểu tượng app
-const V = 'tv-1';
-self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
-self.addEventListener('fetch', () => {}); // để trình duyệt cho phép cài app
+// Service worker: (1) lưu sẵn giao diện app trên máy → mở app hiện ngay, không chờ tải trang;
+// (2) nhận thông báo đẩy + số đỏ trên biểu tượng app.
+// Mỗi lần cập nhật app trên GitHub: tăng số phiên bản V (tv-3, tv-4…). Máy sẽ dùng bản mới từ lần mở kế tiếp.
+const V = 'tv-2';
+const SHELL = ['./', 'index.html', 'config.js', 'pwa.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/badge-72.png'];
+
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(V).then(c => Promise.all(SHELL.map(u => c.add(u).catch(() => {})))).then(() => self.skipWaiting()));
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== V).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+});
+// Chỉ lưu tệp của chính trang này; dữ liệu (Google Apps Script) luôn lấy mới.
+self.addEventListener('fetch', e => {
+  const req = e.request;
+  if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
+  e.respondWith(caches.open(V).then(async c => {
+    const hit = await c.match(req, { ignoreSearch: true });
+    const net = fetch(req).then(r => { if (r && r.ok) c.put(req, r.clone()); return r; }).catch(() => hit);
+    if (hit) { e.waitUntil(net); return hit; }   // có sẵn → trả ngay, cập nhật ngầm cho lần sau
+    return net;
+  }));
+});
 
 self.addEventListener('push', e => {
   let p = {};
