@@ -3,9 +3,7 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" id="vp" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script>/* Điện thoại: dựng trang ở khổ 640px rồi thu vừa màn hình – giống bố cục máy tính (2 cột, gọn) như bản trước */
-(function(){var w=Math.min(screen.width,screen.height);if(w<640)document.getElementById('vp').setAttribute('content','width=640, viewport-fit=cover');})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>Báo thôi việc – Phổ Đình</title>
 <meta name="theme-color" content="#F6F9F8">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -138,7 +136,6 @@
   .field input[type=text]{padding-left:40px}
   input[type=text],input[type=date],input[type=password],select,textarea{width:100%;border:0;border-radius:var(--r-md);padding:12px 14px;background:var(--card);box-shadow:inset 0 0 0 1.5px var(--line);outline:none}
   /* iPhone: bỏ kiểu ô mặc định của máy để ô chọn / ô ngày có khung và chiều cao như nhau */
-  input[type=text],input[type=date],select,textarea{font-size:16px}   /* ≥16px: iPhone không tự phóng to khi bấm vào ô */
   input[type=date],select{-webkit-appearance:none;appearance:none;min-height:48px;line-height:1.4;text-align:left}
   input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0}
   input[type=date]{padding-right:44px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%236A7A88' stroke-width='2' stroke-linecap='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='3'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
@@ -178,9 +175,10 @@
   .fcard{background:var(--card);border-radius:var(--r-lg);padding:18px;margin-top:14px;box-shadow:inset 0 0 0 1px var(--line)}
   .fcard h3{font-size:15.5px;margin-bottom:14px;display:flex;align-items:center;gap:10px}
   .fcard h3 em{font-style:normal;width:26px;height:26px;border-radius:9px;background:var(--mint);display:grid;place-items:center;font-size:13px;color:var(--navy-ink)}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+  .grid>*,.qual>*{min-width:0}
+  input,select,textarea{min-width:0;max-width:100%}
   .grid .full{grid-column:1/-1}
-  @media(max-width:520px){.grid{grid-template-columns:1fr}}
   label{display:block;font-size:13px;font-weight:600;color:#3A4A5A;margin-bottom:6px}
   label .req{color:var(--red)} label .opt{color:var(--muted);font-weight:400}
   .hint{font-size:12.5px;color:var(--muted);margin-top:6px}
@@ -190,7 +188,6 @@
   .seg.bad button.on.neg{background:var(--red)}
   .qual{display:grid;grid-template-columns:1fr 190px;gap:10px 14px;align-items:center}
   .qual>span{font-size:14px}
-  @media(max-width:460px){.qual{grid-template-columns:1fr}}
   .picked{display:flex;gap:12px;align-items:center;background:var(--navy);color:#fff;border-radius:var(--r-lg);padding:14px 16px;margin-top:8px}
   .picked .grow{flex:1;min-width:0}
   .picked .n{font-weight:700;font-size:16px}
@@ -209,6 +206,29 @@
   .send-bar{position:sticky;bottom:calc(var(--nav-h) + 22px + var(--sb));margin-top:18px;z-index:26}
   /* Trang báo nghỉ: phủ nền dưới nút Gửi để nội dung không lộ ra giữa nút và thanh menu */
   body.on-new::after{content:'';position:fixed;left:0;right:0;bottom:0;height:calc(var(--nav-h) + 96px + var(--sb));background:linear-gradient(to bottom,rgba(246,249,248,0),var(--paper) 30px);z-index:24;pointer-events:none}
+
+  /* ---------- Điện thoại: gọn như app – giữ 2 cột, chữ và khoảng cách nhỏ lại ---------- */
+  @media(max-width:520px){
+    .app{padding-left:14px;padding-right:14px}
+    .head{padding:16px 0 12px} .head h1{font-size:22px}
+    .back{padding:12px 0 4px} .back h2{font-size:17px}
+    .sec-t{margin:20px 0 10px} .sec-t h2{font-size:16.5px}
+    .hero{padding:16px;border-radius:var(--r-lg)}
+    .fcard{padding:14px;margin-top:12px} .fcard h3{font-size:15px;margin-bottom:12px}
+    .grid{gap:12px 10px}
+    label{font-size:12.5px;margin-bottom:5px} .hint{font-size:11.5px;margin-top:4px}
+    input[type=text],input[type=date],input[type=password],select,textarea{padding:10px 12px;font-size:14px;border-radius:12px}
+    input[type=date],select{min-height:44px}
+    input[type=date]{padding-right:30px;background-position:right 9px center;background-size:16px}
+    input[type=date]:valid{background-image:none;padding:10px 8px 10px 10px;font-size:13.5px}   /* đã có ngày: bỏ biểu tượng cho đủ chỗ */
+    select{padding-right:30px;background-position:right 11px center}
+    .qual{grid-template-columns:minmax(0,1fr) 158px;gap:8px 10px} .qual>span{font-size:13.5px;line-height:1.35}
+    .seg{padding:3px;gap:3px} .seg button{padding:8px 2px;font-size:13px;white-space:nowrap}
+    .picked{padding:12px 14px} .picked .n{font-size:15px}
+    .tk{padding:14px} .tk-n{font-size:15px}
+    .btn.block{padding:13px;font-size:15px}
+  }
+  @media(max-width:350px){.grid,.qual{grid-template-columns:1fr}}
 
   /* ---------- Việc cần làm ---------- */
   .todo{display:flex;flex-direction:column;gap:10px}
@@ -408,9 +428,9 @@
           <h3><em>1</em>Thời gian</h3>
           <div class="grid">
             <div class="full"><label>Loại thôi việc <span class="req">*</span></label><select id="fLoaiTV" onchange="onLoaiTV()"></select></div>
-            <div><label>Ngày nộp đơn <span class="req" id="nopReq">*</span><span class="opt hide" id="nopOpt">(không bắt buộc khi nghỉ ngang)</span></label><input id="fNop" type="date" onchange="checkNotice()"></div>
-            <div><label>Ngày thôi việc <span class="req">*</span></label><input id="fTV" type="date" onchange="onTV()"><div class="hint">Ngày đầu tiên nhân viên nghỉ</div></div>
-            <div><label>Ngày làm việc cuối cùng</label><input id="fCuoi" type="date" onchange="cuoiTouched=true"><div class="hint">Tự điền trước ngày thôi việc 1 ngày</div></div>
+            <div><label>Ngày nộp đơn <span class="req" id="nopReq">*</span><span class="opt hide" id="nopOpt">(không bắt buộc khi nghỉ ngang)</span></label><input id="fNop" type="date" required onchange="checkNotice()"></div>
+            <div><label>Ngày thôi việc <span class="req">*</span></label><input id="fTV" type="date" required onchange="onTV()"><div class="hint">Ngày đầu tiên nhân viên nghỉ</div></div>
+            <div><label>Ngày làm việc cuối cùng</label><input id="fCuoi" type="date" required onchange="cuoiTouched=true"><div class="hint">Tự điền trước ngày thôi việc 1 ngày</div></div>
             <div><label>Cần tuyển thay <span class="req">*</span></label><div class="seg" data-f="tuyenThay"><button>Có</button><button>Không</button></div></div>
           </div>
           <div id="noticeMsg" class="alert warn hide"></div>
@@ -471,7 +491,7 @@ const $=id=>document.getElementById(id);
 const LC={get(){try{return JSON.parse(localStorage.getItem('tv_last')||'null')}catch(e){return null}},set(v){try{v?localStorage.setItem('tv_last',JSON.stringify(v)):localStorage.removeItem('tv_last')}catch(e){}}};
 const store={get(){try{return localStorage.getItem('tv_token')}catch(e){return null}},set(v){try{v?localStorage.setItem('tv_token',v):localStorage.removeItem('tv_token')}catch(e){}}};
 // Gọi máy chủ: mở bằng link Google (máy tính) → google.script.run; app cài trên điện thoại → gọi thẳng API (doPost)
-const APP_VER='15.10.2026-f';   // tăng mỗi lần cập nhật – xem ở Tài khoản để biết máy đã nhận bản mới chưa
+const APP_VER='15.10.2026-g';   // tăng mỗi lần cập nhật – xem ở Tài khoản để biết máy đã nhận bản mới chưa
 const API_URL=(window.TV_CONFIG&&TV_CONFIG.execUrl)||'';
 function callFail(m,rej){m=String(m||'Lỗi kết nối').replace(/^Error:\s*/,'');if(m.indexOf('SESSION')>=0)toLogin('Phiên đăng nhập đã hết hạn. Nhập lại mã cá nhân để tiếp tục.');rej(new Error(m))}
 function call(fn,...args){return new Promise((res,rej)=>{
@@ -831,7 +851,7 @@ function act(ma,a){
     ${a==='hoantat'&&!p.donCung?'<div class="alert err">Văn phòng <b>chưa nhận đơn cứng</b>. Vẫn xác nhận được; phiếu sẽ nằm trong mail nhắc hằng ngày <b>"Đã nghỉ nhưng chưa nhận đơn cứng"</b> cho đến khi văn phòng bấm Đã nhận đơn.</div>':''}
     ${c.choice?`<label style="margin-top:12px">Cách xử lý *</label><select id="mChoice"><option value="">Chọn</option>${c.choice.map(([v,t])=>`<option value="${v}">${t}</option>`).join('')}</select>`:''}
     ${c.reasons?`<label style="margin-top:12px">Lý do trả đơn *</label><select id="mReason"><option value="">Chọn lý do</option>${(BOOT.returnReasons||[]).map(r=>`<option>${esc(r)}</option>`).join('')}</select>`:''}
-    ${c.date?`<label style="margin-top:12px">${c.date}</label><input type="date" id="mDate" value="${a==='doingay'?p.tv:(a==='tk'&&isNN(p)?'':todayIso())}">`:''}
+    ${c.date?`<label style="margin-top:12px">${c.date}</label><input type="date" required id="mDate" value="${a==='doingay'?p.tv:(a==='tk'&&isNN(p)?'':todayIso())}">`:''}
     ${c.note?`<label style="margin-top:12px">${c.note}</label><textarea id="mNote"></textarea>`:''}
     <div id="mErr" class="alert err hide"></div>
     <div class="acts"><button class="btn ln" onclick="closeModal()">Hủy</button><button class="btn ${c.warn?'':'or'}" style="${c.warn?'background:var(--red)':''}" id="mOk">${c.btn}</button></div>`;
@@ -935,7 +955,7 @@ function renderContracts(focus){
     <div class="tk-acts" id="hda-${c.ma}"><button class="btn sm" onclick="hdExtend('${c.ma}','${c.het}')">Gia hạn</button>${P.submit?`<button class="btn sm rd" onclick="hdStop('${c.ma}','${esc(c.cn)}','${c.het}')">Không gia hạn – báo nghỉ</button>`:''}</div></div>`).join('')
     :'<div class="nf-ok">✓ Không có hợp đồng nào sắp hết hạn.</div>';
 }
-function hdExtend(ma,het){const d=addDays(het<todayIso()?todayIso():het,365);$('hda-'+ma).innerHTML=`<label style="width:100%;margin:0">Ngày hết hạn mới</label><input type="date" id="hdd-${ma}" value="${d}" style="flex:1"><button class="btn sm or" onclick="hdSave('${ma}')">Lưu</button>`}
+function hdExtend(ma,het){const d=addDays(het<todayIso()?todayIso():het,365);$('hda-'+ma).innerHTML=`<label style="width:100%;margin:0">Ngày hết hạn mới</label><input type="date" required id="hdd-${ma}" value="${d}" style="flex:1"><button class="btn sm or" onclick="hdSave('${ma}')">Lưu</button>`}
 async function hdSave(ma){const v=$('hdd-'+ma).value;if(!v)return;busy(true);try{await call('extendContract',TOKEN,ma,v);toast('Đã gia hạn hợp đồng đến '+dmy(v)+'.');await loadContracts();pollNoti()}catch(e){toast(e.message,true)}finally{busy(false)}}
 async function hdStop(ma,cn,het){
   closeModal();if(!BOOT.perms.submit)return;
