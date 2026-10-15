@@ -179,6 +179,8 @@
   .grid>*,.qual>*{min-width:0}
   input,select,textarea{min-width:0;max-width:100%}
   .grid .full{grid-column:1/-1}
+  /* Hai ô chọn cùng hàng: nhãn dài xuống 2 dòng thì ô chọn vẫn thẳng hàng ở đáy */
+  .grid.al-end>div{display:flex;flex-direction:column} .grid.al-end>div>.seg{margin-top:auto}
   label{display:block;font-size:13px;font-weight:600;color:#3A4A5A;margin-bottom:6px}
   label .req{color:var(--red)} label .opt{color:var(--muted);font-weight:400}
   .hint{font-size:12.5px;color:var(--muted);margin-top:6px}
@@ -450,7 +452,7 @@
         <div class="fcard">
           <h3><em>3</em>Đánh giá của quản lý</h3>
           <div class="qual" id="qualBox"></div>
-          <div class="grid" style="margin-top:16px">
+          <div class="grid al-end" style="margin-top:16px">
             <div><label>Có biên bản kỷ luật / cam kết <span class="req">*</span></label><div class="seg bad" data-f="kyLuat"><button class="neg">Có</button><button>Không</button></div></div>
             <div><label>Đồng ý tái tuyển <span class="req">*</span></label><div class="seg bad" data-f="taiTuyen"><button>Có</button><button class="neg">Không</button></div></div>
             <div class="full"><label>Nhận xét quá trình làm việc <span class="opt">(không bắt buộc)</span></label><textarea id="fNX"></textarea></div>
@@ -491,7 +493,7 @@ const $=id=>document.getElementById(id);
 const LC={get(){try{return JSON.parse(localStorage.getItem('tv_last')||'null')}catch(e){return null}},set(v){try{v?localStorage.setItem('tv_last',JSON.stringify(v)):localStorage.removeItem('tv_last')}catch(e){}}};
 const store={get(){try{return localStorage.getItem('tv_token')}catch(e){return null}},set(v){try{v?localStorage.setItem('tv_token',v):localStorage.removeItem('tv_token')}catch(e){}}};
 // Gọi máy chủ: mở bằng link Google (máy tính) → google.script.run; app cài trên điện thoại → gọi thẳng API (doPost)
-const APP_VER='15.10.2026-g';   // tăng mỗi lần cập nhật – xem ở Tài khoản để biết máy đã nhận bản mới chưa
+const APP_VER='15.10.2026-h';   // tăng mỗi lần cập nhật – xem ở Tài khoản để biết máy đã nhận bản mới chưa
 const API_URL=(window.TV_CONFIG&&TV_CONFIG.execUrl)||'';
 function callFail(m,rej){m=String(m||'Lỗi kết nối').replace(/^Error:\s*/,'');if(m.indexOf('SESSION')>=0)toLogin('Phiên đăng nhập đã hết hạn. Nhập lại mã cá nhân để tiếp tục.');rej(new Error(m))}
 function call(fn,...args){return new Promise((res,rej)=>{
