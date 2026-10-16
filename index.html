@@ -495,7 +495,7 @@ const $=id=>document.getElementById(id);
 const LC={get(){try{return JSON.parse(localStorage.getItem('tv_last')||'null')}catch(e){return null}},set(v){try{v?localStorage.setItem('tv_last',JSON.stringify(v)):localStorage.removeItem('tv_last')}catch(e){}}};
 const store={get(){try{return localStorage.getItem('tv_token')}catch(e){return null}},set(v){try{v?localStorage.setItem('tv_token',v):localStorage.removeItem('tv_token')}catch(e){}}};
 // Gọi máy chủ: mở bằng link Google (máy tính) → google.script.run; app cài trên điện thoại → gọi thẳng API (doPost)
-const APP_VER='16.10.2026-a';   // tăng mỗi lần cập nhật – xem ở Tài khoản để biết máy đã nhận bản mới chưa
+const APP_VER='16.10.2026-b';   // tăng mỗi lần cập nhật – xem ở Tài khoản để biết máy đã nhận bản mới chưa
 const GUIDE_URL='https://phodinh-nhansu.github.io/baothoiviec/huong-dan.html';
 const API_URL=(window.TV_CONFIG&&TV_CONFIG.execUrl)||'';
 function callFail(m,rej){m=String(m||'Lỗi kết nối').replace(/^Error:\s*/,'');if(m.indexOf('SESSION')>=0)toLogin('Phiên đăng nhập đã hết hạn. Nhập lại mã cá nhân để tiếp tục.');rej(new Error(m))}
@@ -732,11 +732,13 @@ function card(p){
     if(!p.donCung&&((P.tk&&p.tk)||(P.cb&&!BOOT.hasTK)))a.push(`<button class="btn sm ln" onclick="act('${p.maPhieu}','doncung')">Đã nhận đơn giấy</button>`);
     if(P.tk||P.td||P.cb)a.push(`<button class="btn sm rd" onclick="act('${p.maPhieu}','tradon')">Trả đơn</button>`);
   }
-  if(open&&P.manage){
-    if(p.conLai!=null&&p.conLai<=0)a.push(`<button class="btn sm gr" onclick="act('${p.maPhieu}','hoantat')">Xác nhận đã nghỉ</button>`);
+  if(open&&P.manage&&p.conLai!=null&&p.conLai<=0)a.push(`<button class="btn sm gr" onclick="act('${p.maPhieu}','hoantat')">Xác nhận đã nghỉ</button>`);
+  // C&B xử lý xong: chi nhánh chỉ còn "Xác nhận đã nghỉ"; đổi ngày / rút đơn chỉ Tuyển dụng
+  if(open&&(p.cb?P.td:P.manage)){
     a.push(`<button class="btn sm ln" onclick="act('${p.maPhieu}','doingay')">Đổi ngày</button>`);
     a.push(`<button class="btn sm rd" onclick="act('${p.maPhieu}','rutdon')">Rút đơn</button>`);
   }
+  const lock=open&&p.cb&&P.manage&&!P.td?'<div class="hint">C&amp;B đã xử lý xong hồ sơ. Cần đổi ngày hoặc rút đơn, liên hệ <b>Tuyển dụng</b>.</div>':'';
   if(p.trangThai==='Hoàn tất'&&!p.donCung&&(P.tk||(P.cb&&!BOOT.hasTK)))a.push(`<button class="btn sm ln" onclick="act('${p.maPhieu}','doncung')">Đã nhận đơn giấy</button>`);
   if(p.trangThai==='Hoàn tất'&&P.td)a.push(`<button class="btn sm rd" onclick="act('${p.maPhieu}','huyht')">Hủy xác nhận đã nghỉ</button>`);
   if(P.td||P.cb)a.push(`<button class="btn sm ln" onclick="act('${p.maPhieu}','ghichu')">Ghi chú</button>`);
@@ -754,7 +756,7 @@ function card(p){
     <div class="tk-reason"><b>${esc(p.maLD)}</b> ${esc(p.ctLD)}${p.dienGiai?`<div class="muted" style="font-size:13px">${esc(p.dienGiai)}</div>`:''}</div>
     <div class="flow">${BOOT.hasTK?`<span class="step ${p.tk?'ok':''}" title="${esc(p.tk)}">${p.tk?'✓':'1'} Thư ký Ban</span><span class="arr">›</span>`:''}<span class="step ${p.td?'ok':''}" title="${esc(p.td)}">${p.td?'✓':'2'} Tuyển dụng</span><span class="arr">›</span><span class="step ${p.cb?'ok':''}" title="${esc(p.cb)}">${p.cb?'✓':'3'} C&amp;B</span><span class="step ${p.donCung?'ok':''}" style="margin-left:6px">${p.donCung?'✓ Đơn cứng '+dm(p.donCung):'○ Đơn cứng'}</span></div>
     ${(ret||res)?`<div class="ret"><b>Đơn bị trả về${p.soLanTra>1?' (lần '+p.soLanTra+')':''}:</b> ${esc(p.traDon)}</div>`:''}
-    ${nextStep(p)}
+    ${nextStep(p)}${lock}
     ${p.ghiChu?`<div class="hint">Ghi chú: ${esc(p.ghiChu)}</div>`:''}
     <div class="tk-foot">${esc(p.maPhieu)} – gửi bởi ${esc(p.nguoiGui)}, ${esc(p.thoiDiem)}</div>
     ${p._pending?`<div class="tk-acts"><span class="pend"><i class="sp"></i>Đang lưu: ${esc(p._pending)}…</span></div>`:(a.length?`<div class="tk-acts">${a.join('')}</div>`:'')}
