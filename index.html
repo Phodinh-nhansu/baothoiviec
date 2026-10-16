@@ -160,6 +160,8 @@
   .step.ok{background:var(--green-soft);color:var(--green)}
   .tk-foot{margin-top:10px;font-size:12px;color:var(--muted)}
   .tk-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .pend{display:inline-flex;gap:8px;align-items:center;font-size:13px;font-weight:600;color:var(--navy-2);background:var(--mint-soft);border-radius:10px;padding:8px 12px}
+  .pend .sp{width:14px;height:14px;border-radius:50%;border:2px solid var(--mint-d);border-top-color:var(--navy-2);animation:s .8s linear infinite}
   .btn{border:0;border-radius:12px;padding:11px 16px;font-weight:700;background:var(--navy);color:#fff}
   .btn:disabled{opacity:.5;cursor:default}
   .btn.sm{padding:8px 12px;font-size:13px;border-radius:11px}
@@ -493,7 +495,7 @@ const $=id=>document.getElementById(id);
 const LC={get(){try{return JSON.parse(localStorage.getItem('tv_last')||'null')}catch(e){return null}},set(v){try{v?localStorage.setItem('tv_last',JSON.stringify(v)):localStorage.removeItem('tv_last')}catch(e){}}};
 const store={get(){try{return localStorage.getItem('tv_token')}catch(e){return null}},set(v){try{v?localStorage.setItem('tv_token',v):localStorage.removeItem('tv_token')}catch(e){}}};
 // Gọi máy chủ: mở bằng link Google (máy tính) → google.script.run; app cài trên điện thoại → gọi thẳng API (doPost)
-const APP_VER='15.10.2026-i';   // tăng mỗi lần cập nhật – xem ở Tài khoản để biết máy đã nhận bản mới chưa
+const APP_VER='16.10.2026-a';   // tăng mỗi lần cập nhật – xem ở Tài khoản để biết máy đã nhận bản mới chưa
 const GUIDE_URL='https://phodinh-nhansu.github.io/baothoiviec/huong-dan.html';
 const API_URL=(window.TV_CONFIG&&TV_CONFIG.execUrl)||'';
 function callFail(m,rej){m=String(m||'Lỗi kết nối').replace(/^Error:\s*/,'');if(m.indexOf('SESSION')>=0)toLogin('Phiên đăng nhập đã hết hạn. Nhập lại mã cá nhân để tiếp tục.');rej(new Error(m))}
@@ -549,6 +551,7 @@ function apply(D,stale){
   if(stale){if(D.noti){NOTI=D.noti;setBadge()}return}
   LC.set({code:BOOT.user.code,boot:D.boot,tickets:TICKETS,contracts:CONTRACTS,noti:D.noti});
   startNoti(D.noti);helloShell();
+  if(BOOT.perms.submit&&BOOT.cns.length&&!staffCache.get(BOOT.cns[0]))setTimeout(()=>fetchStaff(BOOT.cns[0]).catch(()=>{}),1500);
   let seen=null;try{seen=localStorage.getItem('tv_help_'+BOOT.user.code)}catch(e){}
   if(!seen){openHelp();try{localStorage.setItem('tv_help_'+BOOT.user.code,'1')}catch(e){}}
 }
@@ -754,7 +757,7 @@ function card(p){
     ${nextStep(p)}
     ${p.ghiChu?`<div class="hint">Ghi chú: ${esc(p.ghiChu)}</div>`:''}
     <div class="tk-foot">${esc(p.maPhieu)} – gửi bởi ${esc(p.nguoiGui)}, ${esc(p.thoiDiem)}</div>
-    ${a.length?`<div class="tk-acts">${a.join('')}</div>`:''}
+    ${p._pending?`<div class="tk-acts"><span class="pend"><i class="sp"></i>Đang lưu: ${esc(p._pending)}…</span></div>`:(a.length?`<div class="tk-acts">${a.join('')}</div>`:'')}
   </div>`;
 }
 function nextStep(p){
@@ -781,9 +784,14 @@ function showTicket(ma){
 /* ---------- báo thôi việc ---------- */
 function openNew(){if(!BOOT.perms.submit)return;unpick();$('q').value='';go('new');loadStaff()}
 function newBack(){if(PICK)unpick();else go('home')}
+// Danh sách nhân viên: lưu sẵn theo chi nhánh – mở "Báo nghỉ" hiện ngay, cập nhật ngầm
+const staffCache={m:{},get(cn){return this.m[cn]},set(cn,v){this.m[cn]=v}};
+function fetchStaff(cn){return call('getStaff',TOKEN,cn).then(v=>{staffCache.set(cn,v);return v})}
 async function loadStaff(){
-  $('staffList').innerHTML='<div class="empty">Đang tải danh sách nhân viên…</div>';
-  try{STAFF=await call('getStaff',TOKEN,$('cnSel').value);renderStaff()}catch(e){$('staffList').innerHTML=`<div class="empty">${esc(e.message)}</div>`}
+  const cn=$('cnSel').value,hit=staffCache.get(cn);
+  if(hit){STAFF=hit;renderStaff()}else $('staffList').innerHTML='<div class="empty">Đang tải danh sách nhân viên…</div>';
+  try{const v=await fetchStaff(cn);if($('cnSel').value===cn&&!PICK){STAFF=v;renderStaff()}}
+  catch(e){if(!hit)$('staffList').innerHTML=`<div class="empty">${esc(e.message)}</div>`}
 }
 function renderStaff(){
   const q=norm($('q').value.trim()),list=STAFF.filter(s=>!q||norm(s.ten+' '+s.ma).includes(q));
@@ -824,11 +832,13 @@ async function send(){
   const e=$('formErr');if(miss.length){e.textContent='Còn thiếu: '+miss.join(', ')+'.';e.classList.remove('hide');e.scrollIntoView({behavior:'smooth',block:'center'});return}
   e.classList.add('hide');
   confirmSheet('Gửi thông tin thôi việc?',`${PICK.ten} nghỉ từ ngày ${dmy(f.tv)}. Thư ký Ban, Tuyển dụng, C&B và quản lý liên quan sẽ nhận thông báo trên app.`,'Gửi',async()=>{
-    busy(true);$('btnSend').disabled=true;
-    try{const r=await call('submit',TOKEN,f);let m=`Đã gửi phiếu ${r.maPhieu}.`;m+=sentMsg(r.mail);
-      toast(m,r.mail&&!r.mail.ok);upsert(r.ticket);go('home');pollNoti()}
-    catch(err){e.textContent=err.message;e.classList.remove('hide')}
-    finally{busy(false);$('btnSend').disabled=false}
+    // Gửi ngầm: về trang chủ ngay, phiếu hiện "Đang gửi…". Lỗi thì quay lại form (giữ nguyên nội dung đã nhập).
+    const who=PICK,tmp={maPhieu:'TMP-'+Date.now(),ten:who.ten,maNV:who.ma,cn:$('cnSel').value||who.cn,cv:who.cv,tv:f.tv,conLai:diff(todayIso(),f.tv),trangThai:'Mới gửi',loaiTV:f.loaiTV,_pending:'gửi phiếu'};
+    upsert(tmp);go('home');toast('Đang gửi phiếu '+who.ten+'…');
+    STAFF=STAFF.filter(x=>x.ma!==who.ma);staffCache.set($('cnSel').value,STAFF);
+    call('submit',TOKEN,f).then(r=>{TICKETS=TICKETS.filter(x=>x.maPhieu!==tmp.maPhieu);toast(`Đã gửi phiếu ${r.maPhieu}.`+sentMsg(r.mail),r.mail&&!r.mail.ok);upsert(r.ticket);pollNoti()})
+      .catch(err=>{TICKETS=TICKETS.filter(x=>x.maPhieu!==tmp.maPhieu);renderPage();toast('Chưa gửi được phiếu '+who.ten+': '+err.message,true);
+        go('new');PICK=who;$('pickStep').classList.add('hide');$('formStep').classList.remove('hide');e.textContent=err.message;e.classList.remove('hide')});
   });
 }
 
@@ -864,11 +874,26 @@ function act(ma,a){
     const d={mode:$('mChoice')?$('mChoice').value:'',reason:$('mReason')?$('mReason').value:'',date:$('mDate')?$('mDate').value:'',tv:$('mDate')?$('mDate').value:'',note:$('mNote')?$('mNote').value.trim():''};
     const bad=a==='tk'&&!isNN(p)&&!d.date?'Chọn ngày nhận đơn giấy.':(c.choice&&!d.mode?'Chọn cách xử lý.':'');
     if(bad){const el=$('mErr');el.textContent=bad;el.classList.remove('hide');return}
-    $('mOk').disabled=true;busy(true);
-    try{const r=await call('action',TOKEN,ma,a,d);closeModal();upsert(r.ticket);toast('Đã lưu.'+sentMsg(r.mail),r.mail&&!r.mail.ok);pollNoti()}
-    catch(e){const el=$('mErr');el.textContent=e.message;el.classList.remove('hide');$('mOk').disabled=false}
-    finally{busy(false)}
+    // Không chờ máy chủ: đóng ngay, phiếu hiện "Đang lưu…", máy chủ trả về thì cập nhật; lỗi thì trả phiếu về như cũ và báo
+    const before=Object.assign({},p);closeModal();
+    upsert(Object.assign(predict(p,a,d),{_pending:c.btn}));
+    call('action',TOKEN,ma,a,d).then(r=>{upsert(r.ticket||before);toast('Đã lưu: '+c.btn.toLowerCase()+'.'+sentMsg(r.mail),r.mail&&!r.mail.ok);pollNoti()})
+      .catch(e=>{upsert(before);toast('Chưa lưu được ('+c.btn.toLowerCase()+'): '+e.message,true)});
   };
+}
+/** Trạng thái dự đoán sau thao tác – chỉ để hiện ngay, máy chủ trả về sẽ ghi đè. */
+function predict(p,a,d){
+  const q=Object.assign({},p),now=dm(todayIso())+' – '+BOOT.user.name,S={TK:'Thư ký Ban đã nhận',TD:'Đang tuyển thay',CB:'C&B đã xử lý'};
+  if(a==='tk'){q.tk=now;q.trangThai=S.TK;if(d.date)q.donCung=d.date}
+  else if(a==='td'){q.td=now;q.trangThai=S.TD}
+  else if(a==='cb'){q.cb=now;q.trangThai=S.CB}
+  else if(a==='doncung')q.donCung=d.date||todayIso();
+  else if(a==='tradon')q.trangThai=RET;
+  else if(a==='guilai')q.trangThai=RES;
+  else if(a==='doingay'&&d.tv){q.tv=d.tv;q.conLai=diff(todayIso(),d.tv)}
+  else if(a==='rutdon')q.trangThai='Rút đơn';
+  else if(a==='hoantat')q.trangThai='Hoàn tất';
+  return q;
 }
 function confirmSheet(t,msg,btn,fn){
   $('modalBox').innerHTML=`<div class="grab"></div><h3>${esc(t)}</h3><p class="muted" style="margin:6px 0 0;font-size:14px">${esc(msg)}</p><div class="acts"><button class="btn ln" onclick="closeModal()">Xem lại</button><button class="btn or" id="mOk">${esc(btn)}</button></div>`;
