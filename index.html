@@ -311,7 +311,7 @@
   .nf-i .t3{font-size:11.5px;color:#8A97A3;margin-top:4px}
   .nf-i .u{width:8px;height:8px;border-radius:50%;background:var(--red);flex:none;margin-top:6px}
   .modal{position:fixed;inset:0;background:rgba(22,41,63,.45);display:flex;align-items:flex-end;justify-content:center;z-index:50}
-  .modal .box{background:var(--paper);width:100%;max-width:520px;border-radius:26px 26px 0 0;padding:10px 20px 26px}
+  .modal .box{background:var(--paper);width:100%;max-width:520px;border-radius:26px 26px 0 0;padding:10px 20px calc(26px + env(safe-area-inset-bottom,0px));max-height:92vh;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
   .modal .grab{width:44px;height:5px;border-radius:3px;background:#CBD5DC;margin:0 auto 14px}
   .modal h3{font-size:18px;margin-bottom:4px}
   .modal .acts{display:flex;gap:10px;margin-top:16px}
@@ -370,6 +370,7 @@
       <div class="sec-t"><h2>Sắp nghỉ việc</h2><button onclick="go('cal')">Mở lịch</button></div>
       <p class="muted" style="margin:-6px 0 10px;font-size:13px">Bấm vào tên để xem chi tiết phiếu.</p>
       <div id="upcoming"></div>
+      <div id="rpEntry"></div>
     </section>
 
     <!-- LỊCH -->
@@ -495,7 +496,7 @@ const $=id=>document.getElementById(id);
 const LC={get(){try{return JSON.parse(localStorage.getItem('tv_last')||'null')}catch(e){return null}},set(v){try{v?localStorage.setItem('tv_last',JSON.stringify(v)):localStorage.removeItem('tv_last')}catch(e){}}};
 const store={get(){try{return localStorage.getItem('tv_token')}catch(e){return null}},set(v){try{v?localStorage.setItem('tv_token',v):localStorage.removeItem('tv_token')}catch(e){}}};
 // Gọi máy chủ: mở bằng link Google (máy tính) → google.script.run; app cài trên điện thoại → gọi thẳng API (doPost)
-const APP_VER='16.10.2026-b';   // tăng mỗi lần cập nhật – xem ở Tài khoản để biết máy đã nhận bản mới chưa
+const APP_VER='17.10.2026-a';   // tăng mỗi lần cập nhật – xem ở Tài khoản để biết máy đã nhận bản mới chưa
 const GUIDE_URL='https://phodinh-nhansu.github.io/baothoiviec/huong-dan.html';
 const API_URL=(window.TV_CONFIG&&TV_CONFIG.execUrl)||'';
 function callFail(m,rej){m=String(m||'Lỗi kết nối').replace(/^Error:\s*/,'');if(m.indexOf('SESSION')>=0)toLogin('Phiên đăng nhập đã hết hạn. Nhập lại mã cá nhân để tiếp tục.');rej(new Error(m))}
@@ -608,6 +609,7 @@ function renderHome(){
   $('todo').innerHTML=items.length?items.map(x=>`<button class="td-i ${x.cls}" onclick="${x.k==='hd'?'openContracts()':`openList('${x.k}')`}"><div class="ic">${x.n}</div><div class="grow"><div class="t1">${x.t1}</div><div class="t2">${x.t2}</div></div><span class="go">${x.btn}</span></button>`).join('')
     :'<div class="td-ok"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="m5 12 5 5 9-10"/></svg>Không có việc tồn đọng. Mọi phiếu đều đang đúng tiến độ.</div>';
   const up=s.open.slice().sort((a,b)=>String(a.tv).localeCompare(String(b.tv))).slice(0,6);
+  $('rpEntry').innerHTML=P.dashboard?`<div class="sec-t"><h2>Báo cáo</h2></div><button class="td-i" onclick="openReport()"><div class="ic">📊</div><div class="grow"><div class="t1">Báo cáo thôi việc theo tháng</div><div class="t2">Số người nghỉ, tỷ lệ, lý do, chi nhánh báo động – chọn kỳ bất kỳ</div></div><span class="go">Xem</span></button>`:'';
   $('upcoming').innerHTML=up.length?timeline(up,true):`<div class="empty"><b>Chưa có phiếu nào đang xử lý</b>${P.submit?'Bấm nút cam "Báo nghỉ" khi có nhân viên xin nghỉ.':'Khi quản lý chi nhánh gửi phiếu, thông tin sẽ hiện ở đây.'}</div>`;
 }
 function openHelp(){
@@ -618,7 +620,8 @@ function openHelp(){
     ['Điền ngày nghỉ, lý do, đánh giá','bấm <b>Gửi</b>. Thư ký Ban, Tuyển dụng và C&B nhận thông báo ngay trên app.'],
     ['Gửi đơn cứng về Thư ký Ban','Thư ký Ban bàn giao tiếp cho Tuyển dụng, rồi C&B.'],
     ['Nếu đơn bị trả về','chuông 🔔 báo kèm lý do. Sửa đơn, gửi bản giấy về <b>Thư ký Ban</b> rồi bấm <b>Đã sửa, gửi lại đơn</b>.'],
-    ['Từ ngày nhân viên nghỉ','mở <b>Trang chủ</b> → <b>Xác nhận nhân viên đã nghỉ</b>. Nếu nhân viên đổi ý, bấm <b>Rút đơn</b>; đổi ngày thì bấm <b>Đổi ngày</b>.']];
+    ['Từ ngày nhân viên nghỉ','mở <b>Trang chủ</b> → <b>Xác nhận nhân viên đã nghỉ</b>.'],
+    ['Nhân viên đổi ý hoặc đổi ngày','bấm <b>Rút đơn</b> / <b>Đổi ngày</b> trên phiếu. Khi <b>C&amp;B đã xử lý xong</b>, chi nhánh chỉ còn nút Xác nhận đã nghỉ – cần rút đơn, đổi ngày thì liên hệ <b>Tuyển dụng</b>.']];
   else if(P.tk&&!P.td&&!P.cb)steps=[
     ['Bạn là bước 1','mỗi phiếu mới đi qua Thư ký Ban trước, rồi đến Tuyển dụng và C&B.'],
     ['Khi có phiếu mới','chuông 🔔 góc trên báo cho bạn. Trang chủ hiện mục <b>Bước 1 – Nhận đơn giấy, chuyển Tuyển dụng</b>; bấm khi đơn giấy đã về tới bạn.'],
@@ -630,6 +633,7 @@ function openHelp(){
     ['Khi Thư ký Ban chuyển đơn sang','trang chủ hiện mục <b>Bước 2 – Nhận đơn, chuyển C&B</b>.'],
     ['Nhận được đơn giấy','bấm <b>Đã nhận đơn – chuyển C&B</b>, ghi kế hoạch tuyển (nếu có), rồi chuyển đơn giấy cho C&B.'],
     ['Đơn có sai sót','bấm <b>Trả đơn</b>, chọn lý do – chi nhánh nhận thông báo để sửa.'],
+    ['Sau khi C&B xử lý xong','chỉ Tuyển dụng (và Admin) còn bấm được <b>Đổi ngày</b>, <b>Rút đơn</b>; chi nhánh chỉ còn Xác nhận đã nghỉ.'],
     ['Theo dõi Lịch nghỉ','để biết ngày nào chi nhánh nào thiếu người.'],
     ['Nhân viên đã xác nhận nghỉ nhưng quay lại làm','mở phiếu, bấm <b>Hủy xác nhận đã nghỉ</b> – app tự gỡ khỏi file tổng.'],
     ['Quản trị','thêm/đổi người dùng, email nhận mail tổng hợp và báo cáo tháng ở sheet NGUOI_DUNG.']];
@@ -637,7 +641,7 @@ function openHelp(){
     ['Thứ tự xử lý','Thư ký Ban → Tuyển dụng → C&B. Bạn là bước 3.'],
     ['Khi Tuyển dụng chuyển đơn sang','bấm <b>Đã nhận đơn – xử lý BH xong</b> sau khi xử lý bảo hiểm, chốt công.'],
     ['Đơn sai, thiếu','bấm <b>Trả đơn</b> và chọn lý do – chi nhánh nhận thông báo để sửa.']];
-  else steps=[['Trang chủ','cho biết số phiếu đang xử lý và người sắp nghỉ.'],['Lịch nghỉ','xem theo ngày, theo tháng.'],['Ngày 5 hằng tháng','bạn nhận email báo cáo thôi việc tháng trước.']];
+  else steps=[['Trang chủ','cho biết số phiếu đang xử lý và người sắp nghỉ.'],['Lịch nghỉ','xem theo ngày, theo tháng.'],['Báo cáo','cuối Trang chủ: bấm <b>Báo cáo thôi việc theo tháng</b>, chọn kỳ muốn xem.'],['Ngày 5 hằng tháng','bạn nhận email báo cáo thôi việc tháng trước.']];
   steps.push(['Chuông 🔔 góc trên','số đỏ là số việc đang chờ bạn – làm xong tự tắt, không cần đọc. Tin cập nhật nằm bên dưới.']);
   $('modalBox').innerHTML=`<div class="grab"></div><div class="help"><h3>Cách sử dụng</h3><div class="muted" style="font-size:13.5px">Dành cho ${esc(r)}</div><ol>${steps.map(([a,b])=>`<li><b>${a}</b>: ${b}</li>`).join('')}</ol>
     <div class="muted" style="font-size:13px;line-height:1.7">Trên phiếu: <span class="bd ut-Cao">Tuyển: Cao</span> <span class="bd ut-TB">Tuyển: Trung bình</span> theo vị trí (tăng 1 bậc khi còn ≤ 7 ngày hoặc chi nhánh báo động đỏ) · <span class="bd don-gap">Thiếu đơn – gấp</span> sắp nghỉ mà chưa có đơn giấy.</div></div>
@@ -908,7 +912,7 @@ function openMe(){
     <div class="muted" style="text-align:center;font-size:12px;margin-top:10px">Phiên bản ${APP_VER}</div>`;
   $('modal').classList.remove('hide');
 }
-function closeModal(){$('modal').classList.add('hide')}
+function closeModal(){$('modal').classList.add('hide');$('modalBox').scrollTop=0}
 
 /* ---------- thông báo (chuông) ---------- */
 // VIEC = việc đang chờ bạn (tự tắt khi đã xử lý) · TIN = tin để biết (tắt khi đọc). Số đỏ = số việc.
@@ -976,6 +980,26 @@ function helloShell(){toShell({type:'tv-hello',user:BOOT&&BOOT.user?BOOT.user.na
 /* ---------- hợp đồng sắp hết hạn ---------- */
 let CONTRACTS=[];
 async function loadContracts(){const P=BOOT.perms;if(!(P.branch||P.manage||P.td))return;try{CONTRACTS=await call('getContracts',TOKEN)||[];if(PAGE==='home')renderHome();if($('hdList'))renderContracts()}catch(e){}}
+/* ---------- báo cáo trong app (cột "Xem báo cáo trong app") ---------- */
+const RPC={};
+function openReport(){
+  const t=new Date(),ms=[];for(let i=1;i<=24;i++){const d=new Date(t.getFullYear(),t.getMonth()-i,1);ms.push([d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-01','T'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()])}
+  const opt=ms.map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
+  $('modalBox').innerHTML=`<div class="grab"></div><h3>Báo cáo thôi việc</h3><div class="muted" style="font-size:13px;margin-bottom:10px">Theo chi nhánh bạn phụ trách. Mặc định tháng trước; chọn nhiều tháng để xem gộp.</div>
+    <div class="grid al-end"><div><label>Từ tháng</label><select id="rpA">${opt}</select></div><div><label>Đến tháng</label><select id="rpB">${opt}</select></div></div>
+    <div class="acts" style="margin-top:12px"><button class="btn" onclick="loadReport()">Xem báo cáo</button></div>
+    <div id="rpOut" style="margin-top:14px;overflow-x:auto"></div>
+    <div class="acts"><button class="btn ln" onclick="closeModal()">Đóng</button></div>`;
+  $('modal').classList.remove('hide');$('modalBox').scrollTop=0;loadReport();
+}
+async function loadReport(){
+  const key=()=>{const a=$('rpA').value,b=$('rpB').value;return a<=b?a+'|'+b:b+'|'+a};
+  const k=key(),[a,b]=k.split('|'),out=$('rpOut');
+  if(RPC[k]){out.innerHTML=RPC[k];return}
+  out.innerHTML='<div class="muted" style="padding:18px 4px;font-size:14px">Đang tổng hợp số liệu…</div>';
+  try{const h=await call('getReport',TOKEN,a,b);RPC[k]=h;if($('rpOut')&&key()===k)$('rpOut').innerHTML=h}
+  catch(e){out.innerHTML='<div class="alert err">'+esc(e.message)+'</div>'}
+}
 function openContracts(focus){$('modalBox').innerHTML='<div class="grab"></div><h3>Hợp đồng sắp hết hạn</h3><div class="muted" style="font-size:13px;margin-bottom:10px">Gia hạn: nhập ngày hết hạn mới. Không gia hạn: báo nghỉ (loại HH, lý do F3) – app điền sẵn.</div><div id="hdList" class="nf-list"></div>';$('modal').classList.remove('hide');renderContracts(focus)}
 function renderContracts(focus){
   const box=$('hdList');if(!box)return;const P=BOOT.perms;
