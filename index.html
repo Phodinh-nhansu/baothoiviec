@@ -496,7 +496,7 @@ const $=id=>document.getElementById(id);
 const LC={get(){try{return JSON.parse(localStorage.getItem('tv_last')||'null')}catch(e){return null}},set(v){try{v?localStorage.setItem('tv_last',JSON.stringify(v)):localStorage.removeItem('tv_last')}catch(e){}}};
 const store={get(){try{return localStorage.getItem('tv_token')}catch(e){return null}},set(v){try{v?localStorage.setItem('tv_token',v):localStorage.removeItem('tv_token')}catch(e){}}};
 // Gọi máy chủ: mở bằng link Google (máy tính) → google.script.run; app cài trên điện thoại → gọi thẳng API (doPost)
-const APP_VER='17.10.2026-a';   // tăng mỗi lần cập nhật – xem ở Tài khoản để biết máy đã nhận bản mới chưa
+const APP_VER='17.10.2026-b';   // tăng mỗi lần cập nhật – xem ở Tài khoản để biết máy đã nhận bản mới chưa
 const GUIDE_URL='https://phodinh-nhansu.github.io/baothoiviec/huong-dan.html';
 const API_URL=(window.TV_CONFIG&&TV_CONFIG.execUrl)||'';
 function callFail(m,rej){m=String(m||'Lỗi kết nối').replace(/^Error:\s*/,'');if(m.indexOf('SESSION')>=0)toLogin('Phiên đăng nhập đã hết hạn. Nhập lại mã cá nhân để tiếp tục.');rej(new Error(m))}
@@ -1038,6 +1038,9 @@ async function hdStop(ma,cn,het){
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
   const hasNoti = 'Notification' in window && 'serviceWorker' in navigator;
+  // Mở từ Gmail / ứng dụng Google / Zalo / Facebook…: trình duyệt bên trong app đó không cài được app, không nhớ đăng nhập
+  const ua = navigator.userAgent;
+  const inApp = !standalone && (/GSA\/|Gmail|FBAN|FBAV|FB_IAB|Instagram|Zalo|Line\/|; wv\)/i.test(ua) || (isIOS && !/Safari\//.test(ua)));
   const device = (isIOS ? 'iPhone/iPad' : /android/i.test(navigator.userAgent) ? 'Android' : 'Máy tính') + (standalone ? ' – app' : ' – trình duyệt');
   let token = null, swReg = null, messaging = null, fm = null, loggedIn = false, pendingFresh = false, shown = false;
 
@@ -1058,6 +1061,8 @@ async function hdStop(ma,cn,het){
   wrap.innerHTML = `
     <div id="cInstall" class="pw-card hide"><div class="grow"><b>Cài app lên màn hình chính</b><span>Bấm <b style="display:inline">⋯</b> → <b style="display:inline">Chia sẻ</b> → <b style="display:inline">Thêm vào MH chính</b>. Sau đó mở app từ biểu tượng mới để nhận thông báo.</span></div><button class="x" data-close="cInstall" aria-label="Đóng">✕</button></div>
     <div id="cPush" class="pw-card hide"><div class="grow"><b>Bật thông báo</b><span id="pushMsg">Nhận ngay việc mới và số đỏ trên biểu tượng app.</span></div><button class="go" id="btnPush">Bật</button><button class="x" data-close="cPush" aria-label="Để sau">✕</button></div>
+    <div id="cInApp" class="pw-card hide" style="top:calc(12px + env(safe-area-inset-top,0px));bottom:auto;flex-direction:column;align-items:stretch;z-index:60"><div><b>Mở bằng ${isIOS ? 'Safari' : 'Chrome'} để cài app</b><span>Bạn đang mở trong trình duyệt của Gmail/Google – không cài được app và không nhớ đăng nhập. Bấm <b style="display:inline">${isIOS ? '⋯ hoặc biểu tượng la bàn' : '⋮'}</b> ở góc màn hình → <b style="display:inline">${isIOS ? 'Mở trong Safari' : 'Mở trong Chrome'}</b>.</span></div>
+      <div style="display:flex;gap:8px;margin-top:10px">${isIOS ? '' : '<button class="go" id="btnChrome" style="flex:1">Mở bằng Chrome</button>'}<button class="go" id="btnCopy" style="flex:1;background:#fff;color:#1F3A5C">Sao chép link</button></div></div>
     <div id="cInfo" class="pw-card hide"><div class="grow"><b id="infoT"></b><span id="infoM"></span></div><button class="x" data-close="cInfo" aria-label="Đóng">✕</button></div>`;
   document.body.appendChild(wrap);
 
@@ -1085,6 +1090,7 @@ async function hdStop(ma,cn,het){
   function info(t, m) { if (later('cInfo')) return; $('infoT').textContent = t; $('infoM').textContent = m; $('cInfo').classList.remove('hide'); }
   function showCards() {
     if (shown) return; shown = true;
+    if (inApp) return;
     if (isIOS && !standalone) { if (!later('cInstall')) $('cInstall').classList.remove('hide'); return; }
     if (!hasNoti) { if (isIOS) info('Chưa nhận được thông báo', 'Cần iPhone chạy iOS 16.4 trở lên (Cài đặt → Cài đặt chung → Cập nhật phần mềm).'); return; }
     if (Notification.permission === 'default' && !later('cPush')) $('cPush').classList.remove('hide');
@@ -1103,6 +1109,16 @@ async function hdStop(ma,cn,het){
     catch (e) { $('pushMsg').textContent = 'Chưa bật được: ' + (e && e.message || e) + ' – thử đóng hẳn app rồi mở lại.'; $('btnPush').disabled = false; }
   };
 
+  if (inApp) {
+    $('cInApp').classList.remove('hide');
+    const url = location.origin + location.pathname;
+    if ($('btnChrome')) $('btnChrome').onclick = () => { location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(url) + ';end'; };
+    $('btnCopy').onclick = async () => {
+      let ok = false; try { await navigator.clipboard.writeText(url); ok = true; } catch (e) { }
+      if (!ok) { const t = document.createElement('textarea'); t.value = url; document.body.appendChild(t); t.select(); try { ok = document.execCommand('copy'); } catch (e) { } t.remove(); }
+      $('btnCopy').textContent = ok ? 'Đã sao chép – dán vào ' + (isIOS ? 'Safari' : 'Chrome') : url;
+    };
+  }
   // Nhận tin từ app (cùng trang)
   window.TV_PWA = {
     msg(m) {
@@ -1113,7 +1129,7 @@ async function hdStop(ma,cn,het){
     }
   };
   // iPhone chưa cài ra màn hình chính: nhắc ngay cả khi chưa đăng nhập
-  if (isIOS && !standalone) setTimeout(showCards, 1200);
+  if (isIOS && !standalone && !inApp) setTimeout(showCards, 1200);
 })();
 
 </script>

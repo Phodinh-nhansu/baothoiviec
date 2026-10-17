@@ -110,6 +110,9 @@ details p b{color:var(--ink)}
 </head>
 <body>
 <div class="wrap">
+  <div id="inapp" hidden style="background:#FDECE8;color:#8A2E1C;border-radius:16px;padding:14px 16px;margin-bottom:14px;font-size:15px;line-height:1.5">
+    <b>Bạn đang mở trong trình duyệt của Gmail/Google.</b> Ở đây không cài được app. Bấm <b id="iaBtn">⋯</b> ở góc màn hình → <b id="iaTo">Mở trong Safari</b>, rồi làm theo hướng dẫn bên dưới. Hoặc chép link app ở bước 1 và dán vào <b id="iaB">Safari</b>.
+  </div>
   <section class="app" aria-label="App Báo thôi việc">
     <div class="row">
       <div class="ic" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M6 8h12M6 12h12M6 16h7"/></svg></div>
@@ -220,6 +223,9 @@ details p b{color:var(--ink)}
   let pref=null;try{pref=localStorage.getItem('hd_os')}catch(e){}
   if(!pref&&/android/i.test(navigator.userAgent))pref='and';
   if(pref)show(pref);
+  const ua=navigator.userAgent,ios=/iphone|ipad|ipod/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  if(/GSA\/|Gmail|FBAN|FBAV|FB_IAB|Instagram|Zalo|Line\/|; wv\)/i.test(ua)||(ios&&!/Safari\//.test(ua))){const w=document.getElementById('inapp');w.hidden=false;
+    if(!ios){document.getElementById('iaBtn').textContent='⋮';document.getElementById('iaTo').textContent='Mở trong Chrome';document.getElementById('iaB').textContent='Chrome'}}
   const b=document.getElementById('btnCopy'),url=document.getElementById('appUrl');
   b.addEventListener('click',()=>{
     const done=()=>{b.textContent='Đã chép';setTimeout(()=>b.textContent='Sao chép',1600)};
