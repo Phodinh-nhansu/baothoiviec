@@ -134,7 +134,7 @@
   .field{position:relative;flex:1}
   .field svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);opacity:.5}
   .field input[type=text]{padding-left:40px}
-  input[type=text],input[type=date],input[type=password],select,textarea{width:100%;border:0;border-radius:var(--r-md);padding:12px 14px;background:var(--card);box-shadow:inset 0 0 0 1.5px var(--line);outline:none}
+  input[type=text],input[type=number],input[type=date],input[type=password],select,textarea{width:100%;border:0;border-radius:var(--r-md);padding:12px 14px;background:var(--card);box-shadow:inset 0 0 0 1.5px var(--line);outline:none}
   /* iPhone: bỏ kiểu ô mặc định của máy để ô chọn / ô ngày có khung và chiều cao như nhau */
   input[type=date],select{-webkit-appearance:none;appearance:none;min-height:48px;line-height:1.4;text-align:left}
   input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0}
@@ -496,7 +496,7 @@ const $=id=>document.getElementById(id);
 const LC={get(){try{return JSON.parse(localStorage.getItem('tv_last')||'null')}catch(e){return null}},set(v){try{v?localStorage.setItem('tv_last',JSON.stringify(v)):localStorage.removeItem('tv_last')}catch(e){}}};
 const store={get(){try{return localStorage.getItem('tv_token')}catch(e){return null}},set(v){try{v?localStorage.setItem('tv_token',v):localStorage.removeItem('tv_token')}catch(e){}}};
 // Gọi máy chủ: mở bằng link Google (máy tính) → google.script.run; app cài trên điện thoại → gọi thẳng API (doPost)
-const APP_VER='17.10.2026-b';   // tăng mỗi lần cập nhật – xem ở Tài khoản để biết máy đã nhận bản mới chưa
+const APP_VER='21.10.2026-c';   // tăng mỗi lần cập nhật – xem ở Tài khoản để biết máy đã nhận bản mới chưa
 const GUIDE_URL='https://phodinh-nhansu.github.io/baothoiviec/huong-dan.html';
 const API_URL=(window.TV_CONFIG&&TV_CONFIG.execUrl)||'';
 function callFail(m,rej){m=String(m||'Lỗi kết nối').replace(/^Error:\s*/,'');if(m.indexOf('SESSION')>=0)toLogin('Phiên đăng nhập đã hết hạn. Nhập lại mã cá nhân để tiếp tục.');rej(new Error(m))}
@@ -547,10 +547,10 @@ function apply(D,stale){
     bindSegs();
     $('nNew').classList.toggle('hide',!BOOT.perms.submit);
   }
-  TICKETS=D.tickets||[];CONTRACTS=D.contracts||[];loaded=true;lastLoad=Date.now();
+  TICKETS=D.tickets||[];CONTRACTS=D.contracts||[];HN=D.hocnghe||null;loaded=true;lastLoad=Date.now();
   if(first){$('vApp').dataset.on='1';go('home')}else if(PAGE!=='new')renderPage();
   if(stale){if(D.noti){NOTI=D.noti;setBadge()}return}
-  LC.set({code:BOOT.user.code,boot:D.boot,tickets:TICKETS,contracts:CONTRACTS,noti:D.noti});
+  LC.set({code:BOOT.user.code,boot:D.boot,tickets:TICKETS,contracts:CONTRACTS,hocnghe:HN,noti:D.noti});
   startNoti(D.noti);helloShell();
   if(BOOT.perms.submit&&BOOT.cns.length&&!staffCache.get(BOOT.cns[0]))setTimeout(()=>fetchStaff(BOOT.cns[0]).catch(()=>{}),1500);
   let seen=null;try{seen=localStorage.getItem('tv_help_'+BOOT.user.code)}catch(e){}
@@ -567,7 +567,7 @@ function go(p){
 }
 function renderPage(){if(PAGE==='home')renderHome();else if(PAGE==='cal')renderCal();else if(PAGE==='list')renderList()}
 async function loadTickets(){
-  try{TICKETS=await call('listPhieu',TOKEN);loaded=true;lastLoad=Date.now();renderPage();loadContracts()}
+  try{TICKETS=await call('listPhieu',TOKEN);loaded=true;lastLoad=Date.now();renderPage();loadContracts();loadHN()}
   catch(e){toast(e.message,true)}
 }
 
@@ -582,6 +582,7 @@ function todoItems(s){
   const P=BOOT.perms,r=BOOT.user.role,items=[];
   const add=(k,n,cls,t1,t2,btn)=>items.push({k,n,cls,t1,t2,btn});
   if(P.branch||P.manage){const near=CONTRACTS.filter(c=>c.con<=7).length;add('hd',CONTRACTS.length,near?'red':'or','Hợp đồng sắp hết hạn','Gia hạn hoặc báo nghỉ'+(near?` – ${near} HĐ còn ≤ 7 ngày`:''),'Xem')}
+  if(HN&&HN.list){const L=hnTodo();add('hn',L.length,L.some(x=>(x.con!==null&&x.con<=7&&x.st==='cho_dx')||x.tra)?'red':'or','Học nghề lên chính thức',hnTodoText(),'Xem')}
   if(P.manage)add('ret',s.ret.length,'red','Sửa và gửi lại đơn bị trả về','Bộ phận xử lý trả đơn – xem lý do trên phiếu','Xem lý do');
   if(P.manage)add('overdue',s.overdue.length,'red','Xác nhận nhân viên đã nghỉ','Đã đến ngày thôi việc – mở phiếu, bấm "Xác nhận đã nghỉ"','Xác nhận');
   if(P.tk)add('resent',s.resent.length,'red','Nhận đơn đã sửa, bàn giao lại','Chi nhánh đã gửi lại đơn – nhận rồi bàn giao cho bộ phận đã trả','Bàn giao');
@@ -606,7 +607,7 @@ function renderHome(){
     $('heroBtn').textContent='Xem danh sách phiếu';$('heroBtn').onclick=()=>{kpiFilter=null;stFilter='open';syncChips();go('list')};
   }
   const items=todoItems(s).filter(x=>x.n>0);
-  $('todo').innerHTML=items.length?items.map(x=>`<button class="td-i ${x.cls}" onclick="${x.k==='hd'?'openContracts()':`openList('${x.k}')`}"><div class="ic">${x.n}</div><div class="grow"><div class="t1">${x.t1}</div><div class="t2">${x.t2}</div></div><span class="go">${x.btn}</span></button>`).join('')
+  $('todo').innerHTML=items.length?items.map(x=>`<button class="td-i ${x.cls}" onclick="${x.k==='hd'?'openContracts()':x.k==='hn'?'openHN()':`openList('${x.k}')`}"><div class="ic">${x.n}</div><div class="grow"><div class="t1">${x.t1}</div><div class="t2">${x.t2}</div></div><span class="go">${x.btn}</span></button>`).join('')
     :'<div class="td-ok"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="m5 12 5 5 9-10"/></svg>Không có việc tồn đọng. Mọi phiếu đều đang đúng tiến độ.</div>';
   const up=s.open.slice().sort((a,b)=>String(a.tv).localeCompare(String(b.tv))).slice(0,6);
   $('rpEntry').innerHTML=P.dashboard?`<div class="sec-t"><h2>Báo cáo</h2></div><button class="td-i" onclick="openReport()"><div class="ic">📊</div><div class="grow"><div class="t1">Báo cáo thôi việc theo tháng</div><div class="t2">Số người nghỉ, tỷ lệ, lý do, chi nhánh báo động – chọn kỳ bất kỳ</div></div><span class="go">Xem</span></button>`:'';
@@ -642,6 +643,7 @@ function openHelp(){
     ['Khi Tuyển dụng chuyển đơn sang','bấm <b>Đã nhận đơn – xử lý BH xong</b> sau khi xử lý bảo hiểm, chốt công.'],
     ['Đơn sai, thiếu','bấm <b>Trả đơn</b> và chọn lý do – chi nhánh nhận thông báo để sửa.']];
   else steps=[['Trang chủ','cho biết số phiếu đang xử lý và người sắp nghỉ.'],['Lịch nghỉ','xem theo ngày, theo tháng.'],['Báo cáo','cuối Trang chủ: bấm <b>Báo cáo thôi việc theo tháng</b>, chọn kỳ muốn xem.'],['Ngày 5 hằng tháng','bạn nhận email báo cáo thôi việc tháng trước.']];
+  if(HN)steps.push(['Học nghề lên chính thức','Trang chủ → <b>Học nghề lên chính thức</b>. Quản lý nhập điểm hạng mục và <b>Gửi đề xuất</b> → Đào tạo <b>Kiểm tra – chuyển C&amp;B</b> (chọn loại HĐ, nhập ngày hiệu lực) → C&amp;B <b>Hoàn tất HĐ</b> → app tự đổi chức vụ đúng ngày hiệu lực.']);
   steps.push(['Chuông 🔔 góc trên','số đỏ là số việc đang chờ bạn – làm xong tự tắt, không cần đọc. Tin cập nhật nằm bên dưới.']);
   $('modalBox').innerHTML=`<div class="grab"></div><div class="help"><h3>Cách sử dụng</h3><div class="muted" style="font-size:13.5px">Dành cho ${esc(r)}</div><ol>${steps.map(([a,b])=>`<li><b>${a}</b>: ${b}</li>`).join('')}</ol>
     <div class="muted" style="font-size:13px;line-height:1.7">Trên phiếu: <span class="bd ut-Cao">Tuyển: Cao</span> <span class="bd ut-TB">Tuyển: Trung bình</span> theo vị trí (tăng 1 bậc khi còn ≤ 7 ngày hoặc chi nhánh báo động đỏ) · <span class="bd don-gap">Thiếu đơn – gấp</span> sắp nghỉ mà chưa có đơn giấy.</div></div>
@@ -957,6 +959,7 @@ async function openNotiItem(id,ma){
   markLocal(id);call('markRead',TOKEN,[id]).catch(()=>{});
   closeModal();
   if(/^HD:/.test(ma)){await loadContracts();return openContracts(ma.slice(3))}
+  if(/^HN:/.test(ma)){await loadHN();return openHN(ma.slice(3))}
   if(!TICKETS.find(x=>x.maPhieu===ma)){busy(true);try{await loadTickets()}finally{busy(false)}}
   if(TICKETS.find(x=>x.maPhieu===ma))showTicket(ma);else toast('Phiếu '+ma+' đã đóng hoặc không còn trong danh sách theo dõi.')
 }
@@ -999,6 +1002,118 @@ async function loadReport(){
   out.innerHTML='<div class="muted" style="padding:18px 4px;font-size:14px">Đang tổng hợp số liệu…</div>';
   try{const h=await call('getReport',TOKEN,a,b);RPC[k]=h;if($('rpOut')&&key()===k)$('rpOut').innerHTML=h}
   catch(e){out.innerHTML='<div class="alert err">'+esc(e.message)+'</div>'}
+}
+/* ---------- học nghề → HĐ lao động: Chi nhánh gửi đề xuất → Đào tạo → C&B → tự đổi chức vụ (quy định ở sheet DK_CHINH_THUC) ---------- */
+let HN=null,hnAll=false;
+async function loadHN(){if(!HN)return;try{HN=await call('getHocNghe',TOKEN);if(PAGE==='home')renderHome();if($('hnList'))renderHN()}catch(e){}}
+// Việc của mình theo vai trò: gửi đề xuất / nhập điểm / kiểm tra (Đào tạo) / làm HĐ (C&B)
+function hnMine(x){const R=HN.role,t=todayIso(),near=x.con!==null&&x.con<=HN.top;
+  if(R.gui&&x.st==='cho_dx'&&(x.du||x.tra||near))return true;
+  if(x.st==='cho_dx'&&near&&x.conds.some(c=>c.canXn&&c.st!=='dat'))return true;
+  if(R.dt&&x.st==='cho_dt')return true;
+  if(R.cb&&(x.st==='cho_cb'||(x.st==='cho_doi'&&x.cb&&x.cb.hl<=t)))return true;
+  return false}
+const hnTodo=()=>HN&&HN.list?HN.list.filter(hnMine):[];
+function hnTodoText(){const L=hnTodo(),R=HN.role,n=k=>L.filter(x=>x.st===k).length,p=[];
+  if(R.cb&&n('cho_cb'))p.push(n('cho_cb')+' chờ làm HĐ');if(R.dt&&n('cho_dt'))p.push(n('cho_dt')+' đề xuất chờ kiểm tra');
+  const dx=n('cho_dx');if(dx)p.push(dx+' cần '+(R.gui?'gửi đề xuất / nhập điểm':'nhập điểm'));return p.join(' · ')||'Theo dõi lộ trình lên chính thức'}
+function openHN(focus){hnAll=!!focus&&!hnTodo().some(x=>x.ma===focus);$('modalBox').innerHTML=`<div class="grab"></div><h3>Học nghề lên chính thức</h3><div class="muted" style="font-size:13px;margin-bottom:10px">Chi nhánh gửi đề xuất → Đào tạo kiểm tra → C&amp;B làm HĐ → app tự đổi chức vụ. Điều kiện theo bảng DK_CHINH_THUC.</div><div style="display:flex;gap:8px;margin-bottom:10px"><button class="chip" id="hnC1" onclick="hnAll=false;renderHN()">Việc của tôi</button><button class="chip" id="hnC2" onclick="hnAll=true;renderHN()">Tất cả</button></div><div id="hnList" class="nf-list"></div>`;$('modal').classList.remove('hide');$('modalBox').scrollTop=0;renderHN(focus);if(focus){const el=$('hn-'+focus);if(el)el.scrollIntoView({block:'center'})}}
+function hnBadge(x){
+  if(x.st==='da_doi')return'<span class="bd b-done">Đã đổi chức vụ ✓</span>';
+  if(x.st==='cho_doi')return`<span class="bd b-done">Hiệu lực ${dm(x.cb.hl)}</span>`;
+  if(x.st==='cho_cb')return'<span class="bd b-hard">Chờ C&amp;B</span>';
+  if(x.st==='cho_dt')return'<span class="bd ut-TB">Chờ Đào tạo</span>';
+  if(x.tra)return'<span class="bd ut-Cao">Bị trả về</span>';
+  if(x.du)return'<span class="bd b-done">Đủ điều kiện ✓</span>';
+  if(x.con===null)return'<span class="bd b-cancel">Chưa có hạn HĐ</span>';
+  return`<span class="bd ${x.con<=7?'ut-Cao':'ut-TB'}">${x.con<0?'Quá hạn '+(-x.con)+' ngày':'Còn '+x.con+' ngày'}</span>`}
+function hnFlowBar(x){const o=['cho_dx','cho_dt','cho_cb','cho_doi','da_doi'],i=o.indexOf(x.st),st=(k,lbl)=>{const j=o.indexOf(k);return`<span class="step ${i>j?'ok':''}">${i>j?'✓':(j+1)} ${lbl}</span>`};
+  return`<div class="flow" style="margin:8px 0 2px">${st('cho_dx','Chi nhánh')}<span class="arr">›</span>${st('cho_dt','Đào tạo')}<span class="arr">›</span>${st('cho_cb','C&amp;B')}<span class="arr">›</span>${st('cho_doi','Đổi chức vụ')}</div>`}
+function hnCond(x,c){
+  const ic={dat:['✓','var(--green)'],khong:['✗','var(--red)'],liet:['!','var(--red)'],cho:['○',c.tre?'var(--red)':'var(--muted)']}[c.st];
+  const res=c.st==='cho'?(c.due?`Hạn ${dmy(c.due)}${c.tre?' – <b style="color:var(--red)">trễ</b>':''}`:'Chưa có kết quả'):`${c.st==='dat'?'Đạt':c.st==='liet'?'Liệt':'Không đạt'}${c.diem!==null&&c.diem!==''?' · '+esc(String(c.diem))+' điểm':''} · ${esc(c.by.replace(/\s*\(.*\)$/,''))}`;
+  const rule=c.dat!==null?`đạt từ ${c.dat}${c.liet!==null?', liệt dưới '+c.liet:''}`:'Đạt / Không đạt';
+  const can=c.canXn&&['cho_dx','cho_dt'].includes(x.st);
+  return`<div style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line)" id="hc-${x.ma}-${esc(c.ma)}">
+    <b style="color:${ic[1]};width:16px;text-align:center;font-size:15px">${ic[0]}</b>
+    <div class="grow" style="min-width:0"><div style="font-size:13.5px;font-weight:600">${esc(c.nd||c.ma)}${c.bb?'':' <span class="muted" style="font-weight:400">(không bắt buộc)</span>'}</div>
+      <div class="muted" style="font-size:12px">${esc(c.loai||'')}${c.loai?' · ':''}${rule} · nhập: ${esc(c.xn.join(', '))}</div>
+      <div style="font-size:12.5px;margin-top:2px">${res}</div></div>
+    ${can?`<button class="btn sm ln" onclick="hnEdit('${x.ma}','${esc(c.ma)}')">${c.st==='cho'?'Nhập':'Sửa'}</button>`:''}</div>`;
+}
+function hnNotes(x){const L=[];
+  if(x.tra)L.push(`<div class="ret"><b>${x.tra.tu==='cb'?'C&amp;B':'Đào tạo'} trả về:</b> ${esc(x.tra.note)} <span class="muted">– ${esc(x.tra.by.replace(/\s*\(.*\)$/,''))}, ${esc(x.tra.at)}</span></div>`);
+  if(x.dx&&x.st!=='cho_dx')L.push(`<div class="hint">Đề xuất: ${esc(x.dx.by.replace(/\s*\(.*\)$/,''))}, ${esc(x.dx.at)}${x.dx.note?' – '+esc(x.dx.note):''}</div>`);
+  if(x.dt)L.push(`<div class="next"><b>Đào tạo đề xuất:</b> ${esc(x.dt.loai)} · hiệu lực <b>${dmy(x.dt.hl)}</b> · ${esc(x.cv)} → <b>${esc(x.dt.cvMoi)}</b>${x.dt.note?' – '+esc(x.dt.note):''}${x.canDC?(x.dc?' · <b style="color:var(--green)">✓ Đã nhận đơn cứng</b>':' · <b style="color:var(--red)">cần đơn cứng</b>'):''}</div>`);
+  if(x.cb)L.push(`<div class="next done">C&amp;B hoàn tất HĐ, hiệu lực <b>${dmy(x.cb.hl)}</b>${x.cvDoi?` · đã đổi ${esc(x.cvDoi.tu)} → ${esc(x.cvDoi.thanh)}`:x.cb.hl<=todayIso()?' · <b style="color:var(--red)">chưa đổi được chức vụ tự động – đổi tay ở file tổng</b>':' · app tự đổi chức vụ vào ngày hiệu lực'}</div>`);
+  return L.join('')}
+function hnActs(x){const R=HN.role,b=[];
+  if(x.st==='cho_dx'&&R.gui)b.push(`<button class="btn sm or" onclick="hnForm('${x.ma}','dexuat')">${x.tra?'Gửi lại đề xuất':'Gửi đề xuất chính thức'}</button>`);
+  if(x.st==='cho_dt'&&R.dt){b.push(`<button class="btn sm" onclick="hnForm('${x.ma}','chuyen')">Kiểm tra – chuyển C&amp;B</button>`);b.push(`<button class="btn sm rd" onclick="hnForm('${x.ma}','tra')">Trả về chi nhánh</button>`)}
+  if(x.st==='cho_cb'&&x.canDC&&!x.dc&&(R.cb||R.dt))b.push(`<button class="btn sm ln" onclick="hnDo('${x.ma}','doncung',{})">Đã nhận đơn cứng</button>`);
+  if(x.st==='cho_cb'&&R.cb){b.push(`<button class="btn sm gr" onclick="hnForm('${x.ma}','hoantat')"${x.canDC&&!x.dc?' disabled title="Cần nhận đơn cứng trước"':''}>Hoàn tất HĐ</button>`);b.push(`<button class="btn sm rd" onclick="hnForm('${x.ma}','tra')">Trả về Đào tạo</button>`)}
+  if((x.st==='cho_doi'||x.st==='da_doi')&&R.cb)b.push(`<button class="btn sm ln" onclick="hnForm('${x.ma}','hoantac')">Hoàn tác</button>`);
+  if(x.st==='cho_dx'&&x.con!==null&&x.con<0&&R.submit)b.push(`<button class="btn sm ln" onclick="hdStop('${x.ma}','${esc(x.cn)}','${x.han}')">Nhân viên nghỉ – báo nghỉ</button>`);
+  return b.length?`<div class="tk-acts" id="hna-${x.ma}">${b.join('')}</div>`:''}
+function renderHN(focus){
+  const box=$('hnList');if(!box||!HN)return;
+  $('hnC1').classList.toggle('on',!hnAll);$('hnC2').classList.toggle('on',hnAll);
+  const L=hnAll?HN.list:hnTodo();
+  box.innerHTML=L.length?L.map(x=>`<div class="tk" id="hn-${x.ma}" style="margin:0 0 10px;padding:12px 14px${x.ma===focus?';box-shadow:0 0 0 2px var(--orange)':''}">
+    <div class="tk-h"><div class="av">${esc(initials(x.ten))}</div><div class="grow"><div class="tk-n">${esc(x.ten)}</div><div class="tk-s">${esc(x.cn)} – ${esc(x.cv)}</div></div>${hnBadge(x)}</div>
+    ${hnFlowBar(x)}
+    <div class="hint" style="margin:4px 0">Vào làm <b>${dmy(x.vao)||'—'}</b> · Hạn HĐ học nghề <b>${dmy(x.han)||'—'}</b> · Đạt <b>${x.bbDat}/${x.bb}</b> điều kiện bắt buộc</div>
+    <div style="height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-bottom:4px"><div style="height:100%;width:${x.bb?Math.round(100*x.bbDat/x.bb):0}%;background:${x.du?'var(--green)':'var(--orange)'}"></div></div>
+    ${x.conds.length?x.conds.map(c=>hnCond(x,c)).join(''):'<div class="hint">Chưa có điều kiện nào áp dụng cho chức vụ này – bổ sung ở sheet DK_CHINH_THUC.</div>'}
+    ${hnNotes(x)}${hnActs(x)}
+  </div>`).join(''):`<div class="nf-ok">✓ ${hnAll?'Không có nhân viên học nghề nào trong phạm vi của bạn.':'Không có việc học nghề nào đang chờ bạn.'}</div>`;
+}
+function hnEdit(ma,dk){
+  const x=HN.list.find(i=>i.ma===ma),c=x&&x.conds.find(i=>i.ma===dk);if(!c)return;
+  const old=$('hn-f');if(old)old.remove();
+  const form=c.dat!==null
+    ?`<input type="number" inputmode="decimal" step="any" id="hn-d" placeholder="Điểm (đạt từ ${c.dat})" style="flex:1;min-width:0"><button class="btn sm or" onclick="hnSave('${ma}','${dk}')">Lưu</button>`
+    :`<button class="btn sm gr" style="flex:1" onclick="hnSave('${ma}','${dk}','Đạt')">Đạt</button><button class="btn sm rd" style="flex:1" onclick="hnSave('${ma}','${dk}','Không đạt')">Không đạt</button>`;
+  $('hc-'+ma+'-'+dk).insertAdjacentHTML('afterend',`<div id="hn-f" style="display:flex;gap:8px;align-items:center;padding:0 0 10px 26px">${form}<button class="btn sm ln" onclick="this.parentNode.remove()" aria-label="Hủy">✕</button></div>`);
+  const i=$('hn-d');if(i)i.focus();
+}
+async function hnSave(ma,dk,kq){
+  const i=$('hn-d'),d=i?i.value:'';if(i&&d==='')return toast('Nhập điểm.',true);
+  const el=$('hc-'+ma+'-'+dk);if(el)el.style.opacity='.55';const f=$('hn-f');if(f)f.remove();
+  try{HN=await call('setHocNghe',TOKEN,ma,dk,d,kq||'','');renderHN(ma);const y=HN.list.find(v=>v.ma===ma);toast(y&&y.du?'Đã lưu – '+y.ten+' đủ điều kiện, gửi đề xuất cho Đào tạo.':'Đã lưu kết quả.');pollNoti();if(PAGE==='home')renderHome()}
+  catch(e){toast(e.message,true);if(el)el.style.opacity=''}
+}
+// Form ngay dưới thẻ cho từng bước
+function hnForm(ma,act){
+  const x=HN.list.find(v=>v.ma===ma);if(!x)return;const old=$('hn-f');if(old)old.remove();
+  let body='',btn='',cls='or';
+  if(act==='dexuat'){body=`<textarea id="hn-n" placeholder="Nhận xét, đề xuất của quản lý (không bắt buộc)"></textarea>`;btn='Gửi cho Đào tạo'}
+  else if(act==='chuyen'){
+    const pref=HN.hds.find(h=>x.du?h.khi!=='Không đạt':h.khi!=='Đạt')||HN.hds[0]||{};
+    body=`<label style="margin:0">Loại HĐ đề xuất</label><select id="hn-l">${HN.hds.map(h=>`<option ${h.ten===pref.ten?'selected':''}>${esc(h.ten)}</option>`).join('')}</select>
+      <div class="hint">${x.du?'Đạt đủ điều kiện bắt buộc.':'<b style="color:var(--red)">Chưa đạt đủ điều kiện bắt buộc</b> – chọn loại HĐ dành cho "Không đạt", hoặc ghi lý do.'}</div>
+      <label style="margin:8px 0 0">Chức vụ sau khi ký</label><input type="text" id="hn-c" value="${esc(x.cvMoi||x.cv)}">
+      <label style="margin:8px 0 0">Ngày hiệu lực HĐ (theo đơn đề xuất)</label><input type="date" required id="hn-h" value="${x.han&&x.han>=todayIso()?addDays(x.han,1):todayIso()}">
+      <textarea id="hn-n" placeholder="Ghi chú cho C&amp;B${x.du?' (không bắt buộc)':''}" style="margin-top:8px"></textarea>`;btn='Chuyển C&B'}
+  else if(act==='tra'){body=`<textarea id="hn-n" placeholder="Lý do trả về *"></textarea>`;btn=x.st==='cho_cb'?'Trả về Đào tạo':'Trả về chi nhánh';cls='rd'}
+  else if(act==='hoantat'){const hl=x.dt&&x.dt.hl;
+    body=`<div style="font-size:14px">${esc(x.dt?x.dt.loai:'')} · hiệu lực <b>${dmy(hl)}</b> (Đào tạo nhập theo đơn đề xuất)</div><div class="hint">${hl<=todayIso()?'App đổi chức vụ ngay':'Đến ngày '+dmy(hl)+' app tự đổi chức vụ'} ${esc(x.cv)} → <b>${esc(x.dt?x.dt.cvMoi:'')}</b> ở file tổng. Sai ngày: bấm Hủy rồi <b>Trả về Đào tạo</b>.</div>`;btn='Xác nhận hoàn tất';cls='gr'}
+  else if(act==='hoantac'){body=`<textarea id="hn-n" placeholder="Lý do hoàn tác *"></textarea><div class="hint">${x.st==='da_doi'?'Chức vụ ở file tổng trở lại '+esc(x.cvDoi?x.cvDoi.tu:'')+'.':'Hủy lịch đổi chức vụ.'} Phiếu về bước C&amp;B.</div>`;btn='Hoàn tác';cls='rd'}
+  const host=$('hna-'+ma)||$('hn-'+ma);
+  host.insertAdjacentHTML('afterend',`<div id="hn-f" class="fcard" style="margin:-4px 0 12px;padding:12px">${body}<div style="display:flex;gap:8px;margin-top:10px"><button class="btn ln" style="flex:1" onclick="this.closest('#hn-f').remove()">Hủy</button><button class="btn ${cls}" style="flex:2" onclick="hnSubmit('${ma}','${act}')">${btn}</button></div></div>`);
+  $('hn-f').scrollIntoView({block:'nearest'});
+}
+function hnSubmit(ma,act){const v=id=>$(id)?$(id).value.trim():'';
+  const f={note:v('hn-n'),loai:v('hn-l'),cvMoi:v('hn-c'),hl:v('hn-h')};
+  if((act==='tra'||act==='hoantac')&&f.note.length<3)return toast('Ghi lý do.',true);
+  if(act==='chuyen'&&!f.hl)return toast('Nhập ngày hiệu lực theo đơn đề xuất.',true);
+  hnDo(ma,act,f)}
+const HN_OK={dexuat:'Đã gửi đề xuất cho Đào tạo.',chuyen:'Đã chuyển C&B.',tra:'Đã trả về.',doncung:'Đã ghi nhận đơn cứng.',hoantat:'Đã hoàn tất HĐ.',hoantac:'Đã hoàn tác.'};
+async function hnDo(ma,act,f){
+  const card=$('hn-'+ma),fm=$('hn-f');if(fm)fm.remove();if(card)card.style.opacity='.55';
+  try{HN=await call('hnStep',TOKEN,ma,act,f);renderHN(ma);const y=HN.list.find(v=>v.ma===ma);
+    toast(act==='hoantat'&&y&&y.st==='da_doi'?'Đã hoàn tất HĐ – chức vụ đã đổi thành '+y.cvDoi.thanh+'.':HN_OK[act]);pollNoti();if(PAGE==='home')renderHome()}
+  catch(e){toast(e.message,true);if(card)card.style.opacity=''}
 }
 function openContracts(focus){$('modalBox').innerHTML='<div class="grab"></div><h3>Hợp đồng sắp hết hạn</h3><div class="muted" style="font-size:13px;margin-bottom:10px">Gia hạn: nhập ngày hết hạn mới. Không gia hạn: báo nghỉ (loại HH, lý do F3) – app điền sẵn.</div><div id="hdList" class="nf-list"></div>';$('modal').classList.remove('hide');renderContracts(focus)}
 function renderContracts(focus){
