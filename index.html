@@ -496,7 +496,7 @@ const $=id=>document.getElementById(id);
 const LC={get(){try{return JSON.parse(localStorage.getItem('tv_last')||'null')}catch(e){return null}},set(v){try{v?localStorage.setItem('tv_last',JSON.stringify(v)):localStorage.removeItem('tv_last')}catch(e){}}};
 const store={get(){try{return localStorage.getItem('tv_token')}catch(e){return null}},set(v){try{v?localStorage.setItem('tv_token',v):localStorage.removeItem('tv_token')}catch(e){}}};
 // Gọi máy chủ: mở bằng link Google (máy tính) → google.script.run; app cài trên điện thoại → gọi thẳng API (doPost)
-const APP_VER='21.10.2026-c';   // tăng mỗi lần cập nhật – xem ở Tài khoản để biết máy đã nhận bản mới chưa
+const APP_VER='05.11.2026-b';   // tăng mỗi lần cập nhật – xem ở Tài khoản để biết máy đã nhận bản mới chưa
 const GUIDE_URL='https://phodinh-nhansu.github.io/baothoiviec/huong-dan.html';
 const API_URL=(window.TV_CONFIG&&TV_CONFIG.execUrl)||'';
 function callFail(m,rej){m=String(m||'Lỗi kết nối').replace(/^Error:\s*/,'');if(m.indexOf('SESSION')>=0)toLogin('Phiên đăng nhập đã hết hạn. Nhập lại mã cá nhân để tiếp tục.');rej(new Error(m))}
@@ -547,10 +547,10 @@ function apply(D,stale){
     bindSegs();
     $('nNew').classList.toggle('hide',!BOOT.perms.submit);
   }
-  TICKETS=D.tickets||[];CONTRACTS=D.contracts||[];HN=D.hocnghe||null;loaded=true;lastLoad=Date.now();
+  TICKETS=D.tickets||[];CONTRACTS=D.contracts||[];HN=D.hocnghe||null;NVX=D.nhanviec||null;loaded=true;lastLoad=Date.now();
   if(first){$('vApp').dataset.on='1';go('home')}else if(PAGE!=='new')renderPage();
   if(stale){if(D.noti){NOTI=D.noti;setBadge()}return}
-  LC.set({code:BOOT.user.code,boot:D.boot,tickets:TICKETS,contracts:CONTRACTS,hocnghe:HN,noti:D.noti});
+  LC.set({code:BOOT.user.code,boot:D.boot,tickets:TICKETS,contracts:CONTRACTS,hocnghe:HN,nhanviec:NVX,noti:D.noti});
   startNoti(D.noti);helloShell();
   if(BOOT.perms.submit&&BOOT.cns.length&&!staffCache.get(BOOT.cns[0]))setTimeout(()=>fetchStaff(BOOT.cns[0]).catch(()=>{}),1500);
   let seen=null;try{seen=localStorage.getItem('tv_help_'+BOOT.user.code)}catch(e){}
@@ -567,7 +567,7 @@ function go(p){
 }
 function renderPage(){if(PAGE==='home')renderHome();else if(PAGE==='cal')renderCal();else if(PAGE==='list')renderList()}
 async function loadTickets(){
-  try{TICKETS=await call('listPhieu',TOKEN);loaded=true;lastLoad=Date.now();renderPage();loadContracts();loadHN()}
+  try{TICKETS=await call('listPhieu',TOKEN);loaded=true;lastLoad=Date.now();renderPage();loadContracts();loadHN();loadNV()}
   catch(e){toast(e.message,true)}
 }
 
@@ -576,12 +576,13 @@ function stats(){
   const t=todayIso(),open=TICKETS.filter(isOpen),left=p=>p.tv?diff(t,p.tv):999;
   return{open,t,week:open.filter(p=>left(p)>=0&&left(p)<=7),overdue:open.filter(p=>left(p)<=0),
     noHard:open.filter(p=>!p.donCung&&left(p)<=7),noHardAll:open.filter(p=>!p.donCung),noTK:open.filter(KPI.noTK[1]),ret:open.filter(p=>p.trangThai===RET),resent:open.filter(p=>p.trangThai===RES),noTD:open.filter(KPI.noTD[1]),noCB:open.filter(KPI.noCB[1]),
-    month:TICKETS.filter(p=>p.trangThai!=='Rút đơn'&&p.tv&&p.tv.slice(0,7)===t.slice(0,7))};
+    month:TICKETS.filter(p=>p.trangThai!=='Rút đơn'&&p.tv&&lastDay(p).slice(0,7)===t.slice(0,7))};
 }
 function todoItems(s){
   const P=BOOT.perms,r=BOOT.user.role,items=[];
   const add=(k,n,cls,t1,t2,btn)=>items.push({k,n,cls,t1,t2,btn});
   if(P.branch||P.manage){const near=CONTRACTS.filter(c=>c.con<=7).length;add('hd',CONTRACTS.length,near?'red':'or','Hợp đồng sắp hết hạn','Gia hạn hoặc báo nghỉ'+(near?` – ${near} HĐ còn ≤ 7 ngày`:''),'Xem')}
+  if(NVX&&(NVX.list.length||NVX.err))add('nv',NVX.err?1:NVX.list.length,'red','Nghỉ khi nhận việc – tạo phiếu thôi việc',NVX.err?esc(NVX.err):'Đào tạo ghi không đạt / nghỉ ở file nhận việc – bấm 1 lần tạo phiếu, thông tin điền sẵn','Xem');
   if(HN&&HN.list){const L=hnTodo();add('hn',L.length,L.some(x=>(x.con!==null&&x.con<=7&&x.st==='cho_dx')||x.tra)?'red':'or','Học nghề lên chính thức',hnTodoText(),'Xem')}
   if(P.manage)add('ret',s.ret.length,'red','Sửa và gửi lại đơn bị trả về','Bộ phận xử lý trả đơn – xem lý do trên phiếu','Xem lý do');
   if(P.manage)add('overdue',s.overdue.length,'red','Xác nhận nhân viên đã nghỉ','Đã đến ngày thôi việc – mở phiếu, bấm "Xác nhận đã nghỉ"','Xác nhận');
@@ -607,7 +608,7 @@ function renderHome(){
     $('heroBtn').textContent='Xem danh sách phiếu';$('heroBtn').onclick=()=>{kpiFilter=null;stFilter='open';syncChips();go('list')};
   }
   const items=todoItems(s).filter(x=>x.n>0);
-  $('todo').innerHTML=items.length?items.map(x=>`<button class="td-i ${x.cls}" onclick="${x.k==='hd'?'openContracts()':x.k==='hn'?'openHN()':`openList('${x.k}')`}"><div class="ic">${x.n}</div><div class="grow"><div class="t1">${x.t1}</div><div class="t2">${x.t2}</div></div><span class="go">${x.btn}</span></button>`).join('')
+  $('todo').innerHTML=items.length?items.map(x=>`<button class="td-i ${x.cls}" onclick="${x.k==='hd'?'openContracts()':x.k==='hn'?'openHN()':x.k==='nv'?'openNV()':`openList('${x.k}')`}"><div class="ic">${x.n}</div><div class="grow"><div class="t1">${x.t1}</div><div class="t2">${x.t2}</div></div><span class="go">${x.btn}</span></button>`).join('')
     :'<div class="td-ok"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="m5 12 5 5 9-10"/></svg>Không có việc tồn đọng. Mọi phiếu đều đang đúng tiến độ.</div>';
   const up=s.open.slice().sort((a,b)=>String(a.tv).localeCompare(String(b.tv))).slice(0,6);
   $('rpEntry').innerHTML=P.dashboard?`<div class="sec-t"><h2>Báo cáo</h2></div><button class="td-i" onclick="openReport()"><div class="ic">📊</div><div class="grow"><div class="t1">Báo cáo thôi việc theo tháng</div><div class="t2">Số người nghỉ, tỷ lệ, lý do, chi nhánh báo động – chọn kỳ bất kỳ</div></div><span class="go">Xem</span></button>`:'';
@@ -637,7 +638,7 @@ function openHelp(){
     ['Sau khi C&B xử lý xong','chỉ Tuyển dụng (và Admin) còn bấm được <b>Đổi ngày</b>, <b>Rút đơn</b>; chi nhánh chỉ còn Xác nhận đã nghỉ.'],
     ['Theo dõi Lịch nghỉ','để biết ngày nào chi nhánh nào thiếu người.'],
     ['Nhân viên đã xác nhận nghỉ nhưng quay lại làm','mở phiếu, bấm <b>Hủy xác nhận đã nghỉ</b> – app tự gỡ khỏi file tổng.'],
-    ['Quản trị','thêm/đổi người dùng, email nhận mail tổng hợp và báo cáo tháng ở sheet NGUOI_DUNG.']];
+    ['Quản trị','thêm/đổi người dùng, email nhận báo cáo tháng trong file quản trị.']];
   else if(P.cb)steps=[
     ['Thứ tự xử lý','Thư ký Ban → Tuyển dụng → C&B. Bạn là bước 3.'],
     ['Khi Tuyển dụng chuyển đơn sang','bấm <b>Đã nhận đơn – xử lý BH xong</b> sau khi xử lý bảo hiểm, chốt công.'],
@@ -710,7 +711,9 @@ const RET='Trả về chi nhánh',RES='Chờ Thư ký Ban nhận đơn sửa';
 const blocked=p=>p.trangThai===RET||p.trangThai===RES;
 const retWho=p=>{const m=String(p.traDon||'').match(/– (.+?) \(([^)]+)\):/);return m?{name:m[1],role:m[2]}:{name:'',role:''}};
 const KPI={ret:['Đơn bị trả về',p=>p.trangThai===RET],overdue:['Đến ngày nghỉ, chưa xác nhận',p=>p.conLai<=0],noTK:['Thư ký Ban chưa tiếp nhận',p=>!p.tk&&!blocked(p)],resent:['Đơn sửa chờ bàn giao',p=>p.trangThai===RES],noCB:['C&B chưa xử lý',p=>!!p.td&&!p.cb&&!blocked(p)],noHardAll:['Chưa nhận đơn cứng',p=>!p.donCung&&(!!p.tk||!BOOT.hasTK)],noHard:['Thiếu đơn cứng',p=>!p.donCung&&p.conLai<=7],noTD:['Tuyển dụng chưa tiếp nhận',p=>(!!p.tk||!BOOT.hasTK)&&!p.td&&!blocked(p)],
-  week:['Nghỉ trong 7 ngày',p=>p.conLai>=0&&p.conLai<=7],month:['Nghỉ trong tháng',p=>p.trangThai!=='Rút đơn'&&p.tv&&p.tv.slice(0,7)===todayIso().slice(0,7)]};
+  week:['Nghỉ trong 7 ngày',p=>p.conLai>=0&&p.conLai<=7],month:['Nghỉ trong tháng (theo ngày làm việc cuối)',p=>p.trangThai!=='Rút đơn'&&p.tv&&lastDay(p).slice(0,7)===todayIso().slice(0,7)]};
+// Tháng báo cáo = tháng của ngày làm việc cuối cùng (nghỉ từ 01/11 → tính tháng 10)
+const lastDay=p=>p.cuoi||addDays(p.tv,-1);
 function openList(k){kpiFilter=k;stFilter=k==='month'?'all':'open';syncChips();go('list')}
 function clearKpi(){kpiFilter=null;syncChips();renderList()}
 function setSt(b){stFilter=b.dataset.st;kpiFilter=null;syncChips();renderList()}
@@ -725,7 +728,7 @@ function renderList(){
   $('tkList').innerHTML=rows.length?rows.map(card).join(''):'<div class="empty"><b>Không có phiếu phù hợp</b>Thử bỏ bộ lọc hoặc tìm với từ khóa khác.</div>';
 }
 function card(p){
-  const open=isOpen(p),P=BOOT.perms;
+  const open=isOpen(p),P=BOOT.perms,nvSrc=p.nguon==='Nhận việc';
   const left=p.conLai==null?'':(p.conLai<0?`quá ${-p.conLai} ngày`:(p.conLai===0?'hôm nay':`còn ${p.conLai} ngày`));
   const a=[];
   const ret=p.trangThai===RET,res=p.trangThai===RES;
@@ -735,24 +738,24 @@ function card(p){
     if(P.tk&&!p.tk)a.push(`<button class="btn sm" onclick="act('${p.maPhieu}','tk')">${isNN(p)?'Xác nhận nghỉ ngang – chuyển Tuyển dụng':'Đã nhận đơn giấy – chuyển Tuyển dụng'}</button>`);
     if(P.td&&!p.td&&(p.tk||!BOOT.hasTK))a.push(`<button class="btn sm" onclick="act('${p.maPhieu}','td')">Đã nhận đơn – chuyển C&amp;B</button>`);
     if(P.cb&&!p.cb&&p.td)a.push(`<button class="btn sm" onclick="act('${p.maPhieu}','cb')">Đã nhận đơn – xử lý BH xong</button>`);
-    if(!p.donCung&&((P.tk&&p.tk)||(P.cb&&!BOOT.hasTK)))a.push(`<button class="btn sm ln" onclick="act('${p.maPhieu}','doncung')">Đã nhận đơn giấy</button>`);
-    if(P.tk||P.td||P.cb)a.push(`<button class="btn sm rd" onclick="act('${p.maPhieu}','tradon')">Trả đơn</button>`);
+    if(!nvSrc&&!p.donCung&&((P.tk&&p.tk)||(P.cb&&!BOOT.hasTK)))a.push(`<button class="btn sm ln" onclick="act('${p.maPhieu}','doncung')">Đã nhận đơn giấy</button>`);
+    if(!nvSrc&&(P.tk||P.td||P.cb))a.push(`<button class="btn sm rd" onclick="act('${p.maPhieu}','tradon')">Trả đơn</button>`);
   }
-  if(open&&P.manage&&p.conLai!=null&&p.conLai<=0)a.push(`<button class="btn sm gr" onclick="act('${p.maPhieu}','hoantat')">Xác nhận đã nghỉ</button>`);
+  if(open&&(nvSrc?P.td:P.manage)&&p.conLai!=null&&p.conLai<=0)a.push(`<button class="btn sm gr" onclick="act('${p.maPhieu}','hoantat')">Xác nhận đã nghỉ</button>`);
   // C&B xử lý xong: chi nhánh chỉ còn "Xác nhận đã nghỉ"; đổi ngày / rút đơn chỉ Tuyển dụng
-  if(open&&(p.cb?P.td:P.manage)){
+  if(open&&(p.cb||nvSrc?P.td:P.manage)){
     a.push(`<button class="btn sm ln" onclick="act('${p.maPhieu}','doingay')">Đổi ngày</button>`);
     a.push(`<button class="btn sm rd" onclick="act('${p.maPhieu}','rutdon')">Rút đơn</button>`);
   }
   const lock=open&&p.cb&&P.manage&&!P.td?'<div class="hint">C&amp;B đã xử lý xong hồ sơ. Cần đổi ngày hoặc rút đơn, liên hệ <b>Tuyển dụng</b>.</div>':'';
-  if(p.trangThai==='Hoàn tất'&&!p.donCung&&(P.tk||(P.cb&&!BOOT.hasTK)))a.push(`<button class="btn sm ln" onclick="act('${p.maPhieu}','doncung')">Đã nhận đơn giấy</button>`);
+  if(!nvSrc&&p.trangThai==='Hoàn tất'&&!p.donCung&&(P.tk||(P.cb&&!BOOT.hasTK)))a.push(`<button class="btn sm ln" onclick="act('${p.maPhieu}','doncung')">Đã nhận đơn giấy</button>`);
   if(p.trangThai==='Hoàn tất'&&P.td)a.push(`<button class="btn sm rd" onclick="act('${p.maPhieu}','huyht')">Hủy xác nhận đã nghỉ</button>`);
   if(P.td||P.cb)a.push(`<button class="btn sm ln" onclick="act('${p.maPhieu}','ghichu')">Ghi chú</button>`);
   const ut=p.utTuyen||'',utK={'Cao':'Cao','Trung bình':'TB','Thấp':'Thấp','Không tuyển':'Không'}[ut]||'Không';
-  const donB=p.utDon&&p.utDon!=='Đủ đơn'&&!/^Nghỉ ngang/.test(p.utDon)&&(open||p.trangThai==='Hoàn tất')?`<span class="bd ${/gấp/.test(p.utDon)?'don-gap':'don-cho'}">${esc(p.utDon)}</span>`:'';
+  const donB=!nvSrc&&p.utDon&&p.utDon!=='Đủ đơn'&&!/^Nghỉ ngang/.test(p.utDon)&&(open||p.trangThai==='Hoàn tất')?`<span class="bd ${/gấp/.test(p.utDon)?'don-gap':'don-cho'}">${esc(p.utDon)}</span>`:'';
   return `<div class="tk ${open?(ut==='Cao'?'p-Khẩn':ut==='Trung bình'?'p-Cao':''):'closed'}" id="tk-${p.maPhieu}">
     <div class="tk-h"><div class="av">${esc(initials(p.ten))}</div>
-      <div class="grow"><div class="tk-n">${esc(p.ten)}</div><div class="tk-s">${esc(p.cn)} – ${esc(p.cv)}</div></div>
+      <div class="grow"><div class="tk-n">${esc(p.ten)}</div><div class="tk-s">${esc(p.cn)} – ${esc(p.cv)}${nvSrc?' · <b style="color:var(--orange)">Nghỉ khi nhận việc</b>':''}</div></div>
       <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end"><span class="bd ${ST_CLS[p.trangThai]||'b-cancel'}">${esc(p.trangThai)}</span>${open&&ut?`<span class="bd ut-${utK}">${ut==='Không tuyển'?'Không tuyển thay':'Tuyển: '+esc(ut)}</span>`:''}${donB}</div></div>
     <div class="tk-row">
       <div><span>Nghỉ từ</span><b>${dmy(p.tv)}</b>${open?`<br><small class="muted">${left}</small>`:''}</div>
@@ -760,7 +763,7 @@ function card(p){
       <div><span>Tuyển thay</span>${esc(p.tuyenThay)||'—'}</div>
     </div>
     <div class="tk-reason"><b>${esc(p.maLD)}</b> ${esc(p.ctLD)}${p.dienGiai?`<div class="muted" style="font-size:13px">${esc(p.dienGiai)}</div>`:''}</div>
-    <div class="flow">${BOOT.hasTK?`<span class="step ${p.tk?'ok':''}" title="${esc(p.tk)}">${p.tk?'✓':'1'} Thư ký Ban</span><span class="arr">›</span>`:''}<span class="step ${p.td?'ok':''}" title="${esc(p.td)}">${p.td?'✓':'2'} Tuyển dụng</span><span class="arr">›</span><span class="step ${p.cb?'ok':''}" title="${esc(p.cb)}">${p.cb?'✓':'3'} C&amp;B</span><span class="step ${p.donCung?'ok':''}" style="margin-left:6px">${p.donCung?'✓ Đơn cứng '+dm(p.donCung):'○ Đơn cứng'}</span></div>
+    <div class="flow">${BOOT.hasTK&&!nvSrc?`<span class="step ${p.tk?'ok':''}" title="${esc(p.tk)}">${p.tk?'✓':'1'} Thư ký Ban</span><span class="arr">›</span>`:''}<span class="step ${p.td?'ok':''}" title="${esc(p.td)}">${p.td?'✓':'2'} Tuyển dụng</span><span class="arr">›</span><span class="step ${p.cb?'ok':''}" title="${esc(p.cb)}">${p.cb?'✓':'3'} C&amp;B</span><span class="step ${p.donCung?'ok':''}" style="margin-left:6px">${p.donCung?'✓ Đơn cứng '+dm(p.donCung):'○ Đơn cứng'}</span></div>
     ${(ret||res)?`<div class="ret"><b>Đơn bị trả về${p.soLanTra>1?' (lần '+p.soLanTra+')':''}:</b> ${esc(p.traDon)}</div>`:''}
     ${nextStep(p)}${lock}
     ${p.ghiChu?`<div class="hint">Ghi chú: ${esc(p.ghiChu)}</div>`:''}
@@ -773,6 +776,7 @@ function nextStep(p){
   if(p.trangThai===RET)return '<div class="next"><b>Đang chờ:</b> quản lý chi nhánh sửa đơn, gửi bản giấy về <b>Thư ký Ban</b> và bấm "Đã sửa, gửi lại đơn".</div>';
   if(p.trangThai==='Hoàn tất')return '<div class="next done">Đã hoàn tất – nhân viên đã chuyển vào danh sách thôi việc.</div>';
   if(p.trangThai==='Rút đơn')return '<div class="next done">Nhân viên đã rút đơn, tiếp tục làm việc.</div>';
+  if(p.nguon==='Nhận việc')return p.cb?'<div class="next">C&amp;B đã xử lý – phiếu tự hoàn tất.</div>':'<div class="next"><b>Đang chờ:</b> C&amp;B xử lý bảo hiểm, chốt công (bước 3) – xong là phiếu tự hoàn tất. Nghỉ khi nhận việc: không cần đơn giấy, chi nhánh không phải xác nhận.</div>';
   const w=[];
   const back=/Gửi lại đơn/.test(p.ghiChu||'')&&p.traDon?(p.traDon.match(/– (.+?) \(([^)]+)\):/)||[]):[];
   const pend={'Thư ký Ban':!p.tk,'Thư ký BKD':!p.tk,'Tuyển dụng':!p.td,'C&B':!p.cb}[back[2]];
@@ -857,7 +861,7 @@ const ACT={
   bangiao:{t:'Nhận đơn đã sửa và bàn giao',msg:'Xác nhận đã nhận đơn giấy đã sửa từ chi nhánh. Bộ phận đã trả đơn sẽ nhận thông báo để nhận lại.',date:'Ngày nhận đơn sửa',note:'Ghi chú (không bắt buộc)',btn:'Bàn giao'},
   tk:{t:'Bước 1 – Thư ký Ban nhận đơn giấy',msg:'Chỉ bấm khi <b>đã cầm đơn giấy</b>. Phiếu chuyển sang Tuyển dụng (bước 2), Tuyển dụng nhận thông báo. Chưa có giấy thì chưa bấm – thông tin đã tự báo Tuyển dụng, C&B từ lúc chi nhánh gửi.',date:'Ngày nhận đơn giấy *',note:'Ghi chú (không bắt buộc)',btn:'Chuyển Tuyển dụng'},
   tkNN:{t:'Bước 1 – Xác nhận nghỉ ngang',msg:'Nhân viên <b>nghỉ ngang</b> nên không có đơn giấy. Thư ký Ban xác nhận thông tin để chuyển Tuyển dụng (bước 2).',date:'Ngày nhận đơn giấy (nếu có)',note:'Ghi chú (không bắt buộc)',btn:'Chuyển Tuyển dụng'},
-  huyht:{t:'Hủy xác nhận đã nghỉ',msg:'Nhân viên sẽ được <b>gỡ khỏi danh sách thôi việc</b> của file tổng 5.DSach và trở lại là đang làm. Các bên nhận thông báo.',choice:[['rut','NV quay lại làm → Rút đơn'],['mo','Bấm nhầm → Mở lại phiếu']],note:'Lý do *',btn:'Hủy xác nhận',warn:true},
+  huyht:{t:'Hủy xác nhận đã nghỉ',msg:'Nhân viên sẽ được <b>gỡ khỏi danh sách thôi việc</b> và trở lại là đang làm. Các bên nhận thông báo.',choice:[['rut','NV quay lại làm → Rút đơn'],['mo','Bấm nhầm → Mở lại phiếu']],note:'Lý do *',btn:'Hủy xác nhận',warn:true},
   td:{t:'Bước 2 – Tuyển dụng nhận đơn',msg:'Xác nhận Tuyển dụng đã nhận đơn và thông tin. Phiếu chuyển sang C&B (bước 3), C&B nhận thông báo.',note:'Kế hoạch tuyển thay (không bắt buộc)',btn:'Chuyển C&B'},
   cb:{t:'Bước 3 – C&B nhận đơn',msg:'Xác nhận C&B đã nhận đơn, xử lý bảo hiểm và chốt công. Phiếu đủ hồ sơ, chờ đến ngày nghỉ.',note:'Ghi chú (không bắt buộc)',btn:'Hoàn tất bước 3'},
   doncung:{t:'Thư ký Ban đã nhận đơn giấy',date:'Ngày nhận đơn cứng',btn:'Lưu'},
@@ -960,6 +964,7 @@ async function openNotiItem(id,ma){
   closeModal();
   if(/^HD:/.test(ma)){await loadContracts();return openContracts(ma.slice(3))}
   if(/^HN:/.test(ma)){await loadHN();return openHN(ma.slice(3))}
+  if(/^NV:/.test(ma)){await loadNV(true);return openNV(ma.slice(3))}
   if(!TICKETS.find(x=>x.maPhieu===ma)){busy(true);try{await loadTickets()}finally{busy(false)}}
   if(TICKETS.find(x=>x.maPhieu===ma))showTicket(ma);else toast('Phiếu '+ma+' đã đóng hoặc không còn trong danh sách theo dõi.')
 }
@@ -1003,6 +1008,48 @@ async function loadReport(){
   try{const h=await call('getReport',TOKEN,a,b);RPC[k]=h;if($('rpOut')&&key()===k)$('rpOut').innerHTML=h}
   catch(e){out.innerHTML='<div class="alert err">'+esc(e.message)+'</div>'}
 }
+/* ---------- nghỉ khi nhận việc: đọc file nhận việc của Đào tạo (cấu hình ở sheet NGUON_NHAN_VIEC) ---------- */
+let NVX=null;
+async function loadNV(fresh){if(!NVX)return;try{NVX=await call('getNhanViec',TOKEN,!!fresh);if(PAGE==='home')renderHome();if($('nvList'))renderNV()}catch(e){}}
+function openNV(focus){$('modalBox').innerHTML=`<div class="grab"></div><h3>Nghỉ khi nhận việc</h3><div class="muted" style="font-size:13px;margin-bottom:10px">Đào tạo ghi <b>không đạt / nghỉ</b> ở file nhận việc → hiện ở đây. Bấm <b>Tạo phiếu</b>: họ tên, mã, chức vụ, chi nhánh điền sẵn. Không phải nghỉ thật → <b>Bỏ qua</b>.</div><div style="display:flex;justify-content:flex-end;margin-bottom:8px"><button class="chip" onclick="nvRefresh()">↻ Đọc lại file nhận việc</button></div><div id="nvList" class="nf-list"></div>`;$('modal').classList.remove('hide');$('modalBox').scrollTop=0;renderNV(focus);if(focus){const el=$('nv-'+focus);if(el)el.scrollIntoView({block:'center'})}}
+async function nvRefresh(){const b=$('nvList');if(b)b.style.opacity='.55';try{NVX=await call('getNhanViec',TOKEN,true);renderNV();if(PAGE==='home')renderHome();toast('Đã đọc lại file nhận việc.')}catch(e){toast(e.message,true)}finally{if(b)b.style.opacity=''}}
+function renderNV(focus){
+  const box=$('nvList');if(!box||!NVX)return;
+  const err=NVX.err?`<div class="alert err" style="margin-bottom:10px">${esc(NVX.err)}</div>`:NVX.warn?`<div class="hint" style="margin-bottom:8px">${esc(NVX.warn)}</div>`:'';
+  box.innerHTML=err+(NVX.list.length?NVX.list.map(x=>`<div class="tk" id="nv-${esc(x.ma)}" style="margin:0 0 10px;padding:12px 14px${x.ma===focus?';box-shadow:0 0 0 2px var(--orange)':''}">
+    <div class="tk-h"><div class="av">${esc(initials(x.ten))}</div><div class="grow"><div class="tk-n">${esc(x.ten)}</div><div class="tk-s">${esc(x.cn||'?')} – ${esc(x.cv)}</div></div><span class="bd ut-Cao">${esc(x.st.split(': ').pop())}</span></div>
+    <div class="hint" style="margin:6px 0 2px">Mã ${esc(x.ma)} · Nhận việc <b>${dmy(x.vao)||'—'}</b> · ${esc(x.st)}${x.inDS?'':' · <b style="color:var(--red)">chưa có trong danh sách nhân sự</b>'}</div>
+    ${x.note?`<div class="hint">Ghi chú: ${esc(x.note)}</div>`:''}
+    <div class="tk-acts" id="nva-${esc(x.ma)}"><button class="btn sm or" onclick="nvForm('${esc(x.ma)}','tao')">Tạo phiếu thôi việc</button><button class="btn sm ln" onclick="nvForm('${esc(x.ma)}','boqua')">Bỏ qua</button></div>
+  </div>`).join(''):(NVX.err?'':`<div class="nf-ok">✓ Không có ai nghỉ khi nhận việc đang chờ (xét ${NVX.days} ngày gần nhất).</div>`));
+}
+function nvForm(ma,act){
+  const x=NVX.list.find(v=>v.ma===ma);if(!x)return;const old=$('nv-f');if(old)old.remove();
+  let body,btn,cls='or';
+  if(act==='tao'){
+    const g={};BOOT.reasons.forEach(r=>(g[r.group]=g[r.group]||[]).push(r));
+    body=`<label style="margin:0">Ngày thôi việc (ngày đầu tiên nghỉ)</label><input type="date" id="nv-t" value="${x.ngay||todayIso()}" min="${x.vao||''}">
+      <label style="margin:8px 0 0">Lý do</label><select id="nv-l"><option value="">Chọn lý do</option>${Object.keys(g).map(k=>`<optgroup label="${esc(k)}">`+g[k].map(r=>`<option value="${r.code}" ${r.code===x.ld?'selected':''}>${r.code} – ${esc(r.name)}</option>`).join('')+'</optgroup>').join('')}</select>
+      <label style="margin:8px 0 0">Diễn giải</label><textarea id="nv-d">${esc((NVX.loai||'Nghỉ khi nhận việc')+' – '+x.st+(x.note?'. '+x.note:''))}</textarea>
+      <label style="margin:8px 0 0">Cần tuyển thay</label><div class="seg" id="nv-y"><button class="on" onclick="nvSeg(this)">Có</button><button onclick="nvSeg(this)">Không</button></div>
+      <div class="hint">${NVX.ngay0?'Phiếu đóng ngay, C&amp;B nhận tin.':'Phiếu chuyển thẳng C&amp;B (không qua Thư ký Ban, chi nhánh không phải xác nhận). C&amp;B xử lý xong là tự hoàn tất.'} Báo cáo tách nhóm <b>${esc(NVX.loai)}</b>, không tính vào tỷ lệ nghỉ của chi nhánh.</div>`;btn='Tạo phiếu'}
+  else{body=`<textarea id="nv-n" placeholder="Lý do bỏ qua * (vd: đã chuyển vị trí khác, nhập nhầm trạng thái)"></textarea><div class="hint">Bỏ qua nhầm: báo Phòng Nhân sự để hiện lại.</div>`;btn='Bỏ qua';cls='rd'}
+  $('nva-'+ma).insertAdjacentHTML('afterend',`<div id="nv-f" class="fcard" style="margin:-4px 0 12px;padding:12px">${body}<div style="display:flex;gap:8px;margin-top:10px"><button class="btn ln" style="flex:1" onclick="this.closest('#nv-f').remove()">Hủy</button><button class="btn ${cls}" style="flex:2" onclick="nvSubmit('${esc(ma)}','${act}')">${btn}</button></div></div>`);
+  $('nv-f').scrollIntoView({block:'nearest'});
+}
+function nvSeg(b){b.parentNode.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b))}
+async function nvSubmit(ma,act){
+  const x=NVX.list.find(v=>v.ma===ma);if(!x)return;const v=id=>$(id)?$(id).value.trim():'';
+  const y=$('nv-y')&&$('nv-y').querySelector('.on');
+  const f=act==='tao'?{tv:v('nv-t'),maLD:v('nv-l'),dienGiai:v('nv-d'),tuyenThay:y?y.textContent:'Có'}:{note:v('nv-n')};
+  if(act==='tao'&&!f.tv)return toast('Chọn ngày thôi việc.',true);
+  if(act==='tao'&&!f.maLD)return toast('Chọn lý do.',true);
+  if(act==='boqua'&&f.note.length<3)return toast('Ghi lý do bỏ qua.',true);
+  const card=$('nv-'+ma),fm=$('nv-f');if(fm)fm.remove();if(card)card.style.opacity='.55';
+  try{const r=await call('nvStep',TOKEN,ma,x.vao,act,f);NVX=r.nhanviec;if(r.ticket){TICKETS=[r.ticket].concat(TICKETS.filter(t=>t.maPhieu!==r.ticket.maPhieu))}
+    renderNV();toast(r.msg);pollNoti();if(PAGE==='home')renderHome()}
+  catch(e){toast(e.message,true);if(card)card.style.opacity=''}
+}
 /* ---------- học nghề → HĐ lao động: Chi nhánh gửi đề xuất → Đào tạo → C&B → tự đổi chức vụ (quy định ở sheet DK_CHINH_THUC) ---------- */
 let HN=null,hnAll=false;
 async function loadHN(){if(!HN)return;try{HN=await call('getHocNghe',TOKEN);if(PAGE==='home')renderHome();if($('hnList'))renderHN()}catch(e){}}
@@ -1017,7 +1064,7 @@ const hnTodo=()=>HN&&HN.list?HN.list.filter(hnMine):[];
 function hnTodoText(){const L=hnTodo(),R=HN.role,n=k=>L.filter(x=>x.st===k).length,p=[];
   if(R.cb&&n('cho_cb'))p.push(n('cho_cb')+' chờ làm HĐ');if(R.dt&&n('cho_dt'))p.push(n('cho_dt')+' đề xuất chờ kiểm tra');
   const dx=n('cho_dx');if(dx)p.push(dx+' cần '+(R.gui?'gửi đề xuất / nhập điểm':'nhập điểm'));return p.join(' · ')||'Theo dõi lộ trình lên chính thức'}
-function openHN(focus){hnAll=!!focus&&!hnTodo().some(x=>x.ma===focus);$('modalBox').innerHTML=`<div class="grab"></div><h3>Học nghề lên chính thức</h3><div class="muted" style="font-size:13px;margin-bottom:10px">Chi nhánh gửi đề xuất → Đào tạo kiểm tra → C&amp;B làm HĐ → app tự đổi chức vụ. Điều kiện theo bảng DK_CHINH_THUC.</div><div style="display:flex;gap:8px;margin-bottom:10px"><button class="chip" id="hnC1" onclick="hnAll=false;renderHN()">Việc của tôi</button><button class="chip" id="hnC2" onclick="hnAll=true;renderHN()">Tất cả</button></div><div id="hnList" class="nf-list"></div>`;$('modal').classList.remove('hide');$('modalBox').scrollTop=0;renderHN(focus);if(focus){const el=$('hn-'+focus);if(el)el.scrollIntoView({block:'center'})}}
+function openHN(focus){hnAll=!!focus&&!hnTodo().some(x=>x.ma===focus);$('modalBox').innerHTML=`<div class="grab"></div><h3>Học nghề lên chính thức</h3><div class="muted" style="font-size:13px;margin-bottom:10px">Chi nhánh gửi đề xuất → Đào tạo kiểm tra → C&amp;B làm HĐ → app tự đổi chức vụ. Điều kiện theo quy định của công ty.</div><div style="display:flex;gap:8px;margin-bottom:10px"><button class="chip" id="hnC1" onclick="hnAll=false;renderHN()">Việc của tôi</button><button class="chip" id="hnC2" onclick="hnAll=true;renderHN()">Tất cả</button></div><div id="hnList" class="nf-list"></div>`;$('modal').classList.remove('hide');$('modalBox').scrollTop=0;renderHN(focus);if(focus){const el=$('hn-'+focus);if(el)el.scrollIntoView({block:'center'})}}
 function hnBadge(x){
   if(x.st==='da_doi')return'<span class="bd b-done">Đã đổi chức vụ ✓</span>';
   if(x.st==='cho_doi')return`<span class="bd b-done">Hiệu lực ${dm(x.cb.hl)}</span>`;
@@ -1064,7 +1111,7 @@ function renderHN(focus){
     ${hnFlowBar(x)}
     <div class="hint" style="margin:4px 0">Vào làm <b>${dmy(x.vao)||'—'}</b> · Hạn HĐ học nghề <b>${dmy(x.han)||'—'}</b> · Đạt <b>${x.bbDat}/${x.bb}</b> điều kiện bắt buộc</div>
     <div style="height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-bottom:4px"><div style="height:100%;width:${x.bb?Math.round(100*x.bbDat/x.bb):0}%;background:${x.du?'var(--green)':'var(--orange)'}"></div></div>
-    ${x.conds.length?x.conds.map(c=>hnCond(x,c)).join(''):'<div class="hint">Chưa có điều kiện nào áp dụng cho chức vụ này – bổ sung ở sheet DK_CHINH_THUC.</div>'}
+    ${x.conds.length?x.conds.map(c=>hnCond(x,c)).join(''):'<div class="hint">Chưa có điều kiện nào áp dụng cho chức vụ này.</div>'}
     ${hnNotes(x)}${hnActs(x)}
   </div>`).join(''):`<div class="nf-ok">✓ ${hnAll?'Không có nhân viên học nghề nào trong phạm vi của bạn.':'Không có việc học nghề nào đang chờ bạn.'}</div>`;
 }
